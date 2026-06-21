@@ -1,3 +1,5 @@
+import { createPlainPreview } from '../textFormatting';
+
 function formatUpdatedDate(value) {
   if (!value) return 'Not saved yet';
 
@@ -13,9 +15,8 @@ function formatUpdatedDate(value) {
 
 function getPreview(document) {
   const preview = document.preview || document.excerpt || document.content || '';
-  const normalizedPreview = preview.replace(/\s+/g, ' ').trim();
 
-  return normalizedPreview || 'No preview available.';
+  return createPlainPreview(preview);
 }
 
 function DocumentCard({ document = {}, onSelect }) {

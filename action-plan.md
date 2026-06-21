@@ -48,8 +48,8 @@
 ### 2.3 Editor, Search & Settings
 - [✓] Build document editor shell with title, content area, save state, and navigation controls
 - [✓] Add document delete action with confirmation
-- [ ] Add basic text formatting controls
-- [ ] Add rich text persistence to the document data model
+- [✓] Add basic text formatting controls
+- [✓] Add rich text persistence to the document data model
 - [✓] Create MVP search interface with query input and result states
 - [ ] Add search filters and highlighted matches
 - [✓] Create settings panel for app configuration

@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { knowledgeDB } from '../db';
+import { createPlainPreview } from '../textFormatting';
 
 const AUTO_SAVE_DELAY = 900;
+
+const formatActions = [
+  { id: 'bold', label: 'Bold', marker: '**', type: 'wrap' },
+  { id: 'italic', label: 'Italic', marker: '_', type: 'wrap' },
+  { id: 'heading', label: 'Heading', marker: '## ', type: 'line' },
+  { id: 'bullet', label: 'Bullet', marker: '- ', type: 'line' },
+];
 
 function createTagText(tags) {
   return Array.isArray(tags) ? tags.join(', ') : '';
@@ -24,6 +32,7 @@ function EditorScreen({ document, onBack, onSaved }) {
   const [error, setError] = useState('');
   const hasUserEdited = useRef(false);
   const autoSaveTimer = useRef(null);
+  const contentInput = useRef(null);
 
   useEffect(() => {
     setCurrentDocument(document || null);
@@ -66,7 +75,8 @@ function EditorScreen({ document, onBack, onSaved }) {
     const updates = {
       title: title.trim() || 'Untitled document',
       content: content.trim(),
-      preview: content.trim(),
+      contentFormat: 'markdown',
+      preview: createPlainPreview(content),
       category: category.trim() || 'Unfiled',
       categoryName: category.trim() || 'Unfiled',
       tags: parseTags(tagText),
@@ -122,6 +132,46 @@ function EditorScreen({ document, onBack, onSaved }) {
       setStatus('idle');
     }
     setter(value);
+  };
+
+  const applyFormat = (action) => {
+    const input = contentInput.current;
+    const selectionStart = input?.selectionStart ?? content.length;
+    const selectionEnd = input?.selectionEnd ?? content.length;
+    const selectedText = content.slice(selectionStart, selectionEnd);
+    let nextContent;
+    let nextSelectionStart;
+    let nextSelectionEnd;
+
+    if (action.type === 'wrap') {
+      const fallbackText = action.id === 'bold' ? 'bold text' : 'italic text';
+      const innerText = selectedText || fallbackText;
+      const replacement = `${action.marker}${innerText}${action.marker}`;
+
+      nextContent = `${content.slice(0, selectionStart)}${replacement}${content.slice(selectionEnd)}`;
+      nextSelectionStart = selectionStart + action.marker.length;
+      nextSelectionEnd = nextSelectionStart + innerText.length;
+    } else {
+      const lineStart = content.lastIndexOf('\n', Math.max(selectionStart - 1, 0)) + 1;
+      const lineAlreadyMarked = content.slice(lineStart, lineStart + action.marker.length) === action.marker;
+
+      if (lineAlreadyMarked) {
+        nextContent = content;
+        nextSelectionStart = selectionStart;
+        nextSelectionEnd = selectionEnd;
+      } else {
+        nextContent = `${content.slice(0, lineStart)}${action.marker}${content.slice(lineStart)}`;
+        nextSelectionStart = selectionStart + action.marker.length;
+        nextSelectionEnd = selectionEnd + action.marker.length;
+      }
+    }
+
+    markEdited(setContent)(nextContent);
+
+    window.requestAnimationFrame(() => {
+      contentInput.current?.focus();
+      contentInput.current?.setSelectionRange(nextSelectionStart, nextSelectionEnd);
+    });
   };
 
   const handleDelete = async () => {
@@ -181,15 +231,30 @@ function EditorScreen({ document, onBack, onSaved }) {
           />
         </label>
 
-        <label className="field editor-content-field">
-          <span>Content</span>
+        <div className="field editor-content-field">
+          <label htmlFor="editor-content">Content</label>
+          <div className="format-toolbar" aria-label="Formatting controls">
+            {formatActions.map((action) => (
+              <button
+                className="format-button"
+                type="button"
+                key={action.id}
+                onClick={() => applyFormat(action)}
+                title={action.label}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
           <textarea
+            id="editor-content"
+            ref={contentInput}
             className="input editor-content"
             value={content}
             onChange={(event) => markEdited(setContent)(event.target.value)}
             placeholder="Start writing..."
           />
-        </label>
+        </div>
 
         {error && (
           <p className="form-status is-error" role="alert">

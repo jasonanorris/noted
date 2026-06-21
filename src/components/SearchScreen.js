@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import DocumentCard from './DocumentCard';
 import { knowledgeDB } from '../db';
+import { stripFormatting } from '../textFormatting';
 
 function matchesQuery(document, query) {
   const searchText = [
@@ -12,7 +13,7 @@ function matchesQuery(document, query) {
     ...(Array.isArray(document.tags) ? document.tags : []),
   ].join(' ').toLowerCase();
 
-  return searchText.includes(query.toLowerCase());
+  return stripFormatting(searchText).includes(query.toLowerCase());
 }
 
 function SearchScreen({ onBack, onOpenDocument }) {

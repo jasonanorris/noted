@@ -63,6 +63,11 @@ test.describe('responsive MVP screens', () => {
       await expect(page.getByRole('heading', { name: 'New Document' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByPlaceholder('Start writing...')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Bold' })).toBeVisible();
+      await page.getByPlaceholder('Start writing...').fill('formatted note');
+      await page.getByPlaceholder('Start writing...').selectText();
+      await page.getByRole('button', { name: 'Bold' }).click();
+      await expect(page.getByPlaceholder('Start writing...')).toHaveValue('**formatted note**');
 
       await page.getByRole('button', { name: 'Back' }).click();
       await page.getByRole('button', { name: 'Search' }).click();
