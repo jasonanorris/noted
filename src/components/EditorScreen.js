@@ -264,8 +264,44 @@ function EditorScreen({ document, onBack, onSaved }) {
     }
   };
 
+  const handleEditorShortcut = (event) => {
+    const isCommand = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+
+    if (isCommand && !event.altKey && key === 's') {
+      event.preventDefault();
+      saveDocument();
+      return;
+    }
+
+    if (isCommand && !event.altKey && key === 'b') {
+      event.preventDefault();
+      setEditorMode('edit');
+      applyFormat(formatActions.find((action) => action.id === 'bold'));
+      return;
+    }
+
+    if (isCommand && !event.altKey && key === 'i') {
+      event.preventDefault();
+      setEditorMode('edit');
+      applyFormat(formatActions.find((action) => action.id === 'italic'));
+      return;
+    }
+
+    if (isCommand && event.shiftKey && !event.altKey && key === 'p') {
+      event.preventDefault();
+      setEditorMode((mode) => (mode === 'preview' ? 'edit' : 'preview'));
+      return;
+    }
+
+    if (key === 'escape' && editorMode === 'preview') {
+      event.preventDefault();
+      setEditorMode('edit');
+    }
+  };
+
   return (
-    <main className="app-view editor-view">
+    <main className="app-view editor-view" onKeyDown={handleEditorShortcut}>
       <header className="app-view-header">
         <button className="text-button" type="button" onClick={onBack}>
           Back
@@ -313,6 +349,7 @@ function EditorScreen({ document, onBack, onSaved }) {
                 type="button"
                 onClick={() => setEditorMode('edit')}
                 aria-pressed={editorMode === 'edit'}
+                title="Edit"
               >
                 Edit
               </button>
@@ -321,6 +358,7 @@ function EditorScreen({ document, onBack, onSaved }) {
                 type="button"
                 onClick={() => setEditorMode('preview')}
                 aria-pressed={editorMode === 'preview'}
+                title="Toggle preview (Ctrl/Cmd+Shift+P)"
               >
                 Preview
               </button>
@@ -336,7 +374,13 @@ function EditorScreen({ document, onBack, onSaved }) {
                     type="button"
                     key={action.id}
                     onClick={() => applyFormat(action)}
-                    title={action.label}
+                    title={
+                      action.id === 'bold'
+                        ? 'Bold (Ctrl/Cmd+B)'
+                        : action.id === 'italic'
+                          ? 'Italic (Ctrl/Cmd+I)'
+                          : action.label
+                    }
                   >
                     {action.label}
                   </button>
@@ -381,7 +425,7 @@ function EditorScreen({ document, onBack, onSaved }) {
                 Delete
               </button>
             )}
-            <button className="btn btn-primary" type="button" onClick={() => saveDocument()}>
+            <button className="btn btn-primary" type="button" onClick={() => saveDocument()} title="Save (Ctrl/Cmd+S)">
               Save
             </button>
           </div>

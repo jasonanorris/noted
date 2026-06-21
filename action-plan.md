@@ -64,7 +64,7 @@
 - [✓] Add backup/restore features
 
 ### 3.2 User Experience Enhancements
-- [ ] Add keyboard shortcuts
+- [✓] Add keyboard shortcuts
 - [ ] Implement undo/redo in editor
 - [✓] Add auto-save functionality
 - [✓] Create document preview mode
@@ -136,8 +136,7 @@
 
 ## Next Steps
 
-1. Add keyboard shortcuts for common editor actions
-2. Implement undo/redo in editor
-3. Optimize bundle size with code splitting
-4. Implement lazy loading for images and components
-5. Implement proper error states and loading indicators
+1. Implement undo/redo in editor
+2. Optimize bundle size with code splitting
+3. Implement lazy loading for images and components
+4. Implement proper error states and loading indicators

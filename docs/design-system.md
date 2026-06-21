@@ -78,6 +78,7 @@ Source of truth: `src/styles.css`.
 - Formatting controls live in `.format-toolbar`.
 - Edit/Preview mode uses `.segmented-control` and `.segmented-button`.
 - Preview output uses `.editor-preview`; render structured React nodes rather than injecting HTML.
+- Editor shortcuts should mirror button actions: `Ctrl/Cmd+S` saves, `Ctrl/Cmd+B` applies bold, `Ctrl/Cmd+I` applies italic, `Ctrl/Cmd+Shift+P` toggles preview, and `Escape` returns from preview to edit mode.
 
 ## Accessibility Rules
 

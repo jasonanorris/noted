@@ -115,13 +115,18 @@ test.describe('main workflow regressions', () => {
     await page.getByLabel('Title').fill('Workflow Draft');
     await page.getByLabel('Category').fill('Projects');
     await page.getByLabel('Tags').fill('workflow, draft');
+    await page.getByLabel('Content').fill('shortcut body');
+    await page.getByLabel('Content').selectText();
+    await page.keyboard.press('Control+B');
+    await expect(page.getByLabel('Content')).toHaveValue('**shortcut body**');
     await page.getByLabel('Content').fill('## Workflow Heading\nFirst **workflow** body\n- saved item');
-    await page.getByRole('button', { name: 'Preview' }).click();
+    await page.keyboard.press('Control+Shift+P');
     await expect(page.getByRole('heading', { name: 'Workflow Heading' })).toBeVisible();
     await expect(page.getByLabel('Document preview')).toContainText('First workflow body');
     await expect(page.getByText('saved item')).toBeVisible();
-    await page.getByRole('button', { name: 'Edit' }).click();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByLabel('Content')).toBeVisible();
+    await page.keyboard.press('Control+S');
 
     await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
     await expect.poll(async () => (await readStore(page, 'categories')).map((category) => category.name)).toContain('Projects');
