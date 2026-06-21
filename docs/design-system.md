@@ -71,6 +71,7 @@ Source of truth: `src/styles.css`.
 - Empty/loading/error content uses `.document-state`.
 - Error state adds `.is-error`.
 - Loading indicators use `.spinner`.
+- Route chunk loading uses `.route-loading-state` inside `.app-view`.
 - Keep empty-state copy short: a strong title plus one supporting sentence.
 
 ### Editor

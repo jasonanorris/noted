@@ -11,6 +11,6 @@ test('routes quick actions to app views', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
-  expect(screen.getByRole('heading', { name: /^search$/i })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: /^search$/i })).toBeInTheDocument();
   expect(await screen.findByText(/search could not load/i)).toBeInTheDocument();
 });

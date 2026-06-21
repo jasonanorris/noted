@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
-import EditorScreen from './components/EditorScreen';
 import HomeScreen from './components/HomeScreen';
-import ImportScreen from './components/ImportScreen';
-import SearchScreen from './components/SearchScreen';
-import SettingsScreen from './components/SettingsScreen';
+
+function lazyWithPreload(importer) {
+  const Component = lazy(importer);
+  Component.preload = importer;
+  return Component;
+}
+
+const EditorScreen = lazyWithPreload(() => import('./components/EditorScreen'));
+const ImportScreen = lazyWithPreload(() => import('./components/ImportScreen'));
+const SearchScreen = lazyWithPreload(() => import('./components/SearchScreen'));
+const SettingsScreen = lazyWithPreload(() => import('./components/SettingsScreen'));
+const deferredScreens = [EditorScreen, ImportScreen, SearchScreen, SettingsScreen];
 
 const viewTitles = {
   home: 'Knowledge Storage',
@@ -18,6 +26,18 @@ function getInitialView() {
   const view = window.history.state?.view || window.location.hash.replace('#', '');
 
   return viewTitles[view] ? view : 'home';
+}
+
+function ViewLoadingFallback() {
+  return (
+    <main className="app-view">
+      <div className="document-state route-loading-state" role="status" aria-live="polite">
+        <span className="spinner" aria-hidden="true" />
+        <strong>Loading view</strong>
+        <span>Preparing your workspace.</span>
+      </div>
+    </main>
+  );
 }
 
 // Service Worker Registration
@@ -96,6 +116,20 @@ function App() {
     document.title = `Noted - ${viewTitles[activeView]}`;
   }, [activeView]);
 
+  useEffect(() => {
+    const preloadScreens = () => {
+      deferredScreens.forEach((Screen) => Screen.preload());
+    };
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preloadScreens);
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(preloadScreens, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   const currentView = useMemo(() => {
     if (activeView === 'home') {
       return (
@@ -137,7 +171,9 @@ function App() {
 
   return (
     <div className="App">
-      {currentView}
+      <Suspense fallback={<ViewLoadingFallback />}>
+        {currentView}
+      </Suspense>
     </div>
   );
 }

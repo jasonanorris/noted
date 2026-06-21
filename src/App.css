@@ -2,3 +2,8 @@
   min-height: 100vh;
   background-color: var(--color-tertiary);
 }
+
+.route-loading-state {
+  max-width: 360px;
+  margin: 20vh auto 0;
+}
