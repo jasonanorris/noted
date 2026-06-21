@@ -82,7 +82,7 @@
 - [ ] Refine and document the consistent design system
 - [ ] Add accessibility features
 - [ ] Implement proper error states and loading indicators
-- [ ] Test offline functionality thoroughly
+- [✓] Test offline functionality thoroughly
 
 ## Phase 5: Deployment & Maintenance (Ongoing)
 
@@ -136,8 +136,8 @@
 
 ## Next Steps
 
-1. Test offline functionality thoroughly before final MVP polish
-2. Refine and document the consistent design system
-3. Add keyboard shortcuts for common editor actions
-4. Implement undo/redo in editor
-5. Optimize bundle size with code splitting
+1. Refine and document the consistent design system
+2. Add keyboard shortcuts for common editor actions
+3. Implement undo/redo in editor
+4. Optimize bundle size with code splitting
+5. Implement lazy loading for images and components

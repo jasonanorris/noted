@@ -1,8 +1,8 @@
 const CACHE_NAME = 'knowledge-app-cache-v2';
-const PRECACHE_URLS = [
-  '/',
-  '/manifest.json',
-];
+const APP_SCOPE = self.registration.scope;
+const APP_SHELL_URL = new URL('.', APP_SCOPE).toString();
+const MANIFEST_URL = new URL('manifest.json', APP_SCOPE).toString();
+const PRECACHE_URLS = [APP_SHELL_URL, MANIFEST_URL];
 
 // Cache strategies:
 // - Static assets (CSS, JS, images): Cache-first with network fallback
@@ -14,33 +14,39 @@ const API_CACHE_NAME = 'api-cache-v1';
 const DYNAMIC_CACHE_NAME = 'dynamic-content-v1';
 
 // Install event - set up caches and precache essential resources
-self.addEventListener('install', () => {
+self.addEventListener('install', (event) => {
   // Create all cache buckets
   const cachePromises = [
-    caches.open(CACHE_NAME),
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)),
     caches.open(STATIC_CACHE_NAME),
     caches.open(API_CACHE_NAME),
     caches.open(DYNAMIC_CACHE_NAME)
   ];
 
-  Promise.all(cachePromises).then(() => {
-    return self.skipWaiting();
-  });
+  event.waitUntil(Promise.all(cachePromises).then(() => self.skipWaiting()));
 });
 
 // Activate event - make the service worker active and claim clients
-self.addEventListener('activate', () => {
-  clients.claim();
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
 });
 
 // Fetch event - handle requests with appropriate cache strategy
 self.addEventListener('fetch', (event) => {
+  event.respondWith(handleRequest(event));
+});
+
+async function handleRequest(event) {
   const request = event.request;
   const url = new URL(request.url);
 
+  if (request.method !== 'GET') {
+    return fetch(request);
+  }
+
   // Static assets: Cache-first strategy
-  if (url.pathname.match(/\.(css|js|png|jpg|svg)$/) ||
-    url.pathname === '/manifest.json') {
+  if (url.pathname.match(/\.(css|js|png|jpg|svg|json)$/) ||
+    url.pathname.endsWith('/manifest.json')) {
     return handleStaticAssets(event, request);
   }
 
@@ -50,7 +56,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // HTML pages and other dynamic content: Network-first with cache fallback
-  if (url.pathname === '/' || url.pathname.startsWith('/app/') ||
+  if (request.mode === 'navigate' || url.pathname === '/' || url.pathname.startsWith('/app/') ||
     url.pathname.endsWith('.html')) {
     return handleDynamicContent(event, request);
   }
@@ -68,11 +74,11 @@ self.addEventListener('fetch', (event) => {
         return response;
       }).catch(() => {
         // Return a fallback if offline
-        return caches.match('/');
+        return caches.match(APP_SHELL_URL);
       });
     });
   });
-});
+}
 
 // Static assets: Cache-first strategy with network fallback
 async function handleStaticAssets(event, request) {
@@ -186,14 +192,7 @@ async function handleDynamicContent(event, request) {
   const cache = await caches.open(DYNAMIC_CACHE_NAME);
 
   try {
-    // Try to get from cache first
-    const cachedResponse = await cache.match(request);
-
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-
-    // If not in cache, fetch from network and cache it
+    // Try network first so app updates are picked up when online.
     const response = await fetch(request);
     const responseClone = response.clone();
     cache.put(request, responseClone);
@@ -202,7 +201,7 @@ async function handleDynamicContent(event, request) {
   } catch (error) {
     console.error('Dynamic content fetch failed:', error);
     // Return a fallback if offline
-    return caches.match('/');
+    return cache.match(request) || caches.match(APP_SHELL_URL);
   }
 }
 

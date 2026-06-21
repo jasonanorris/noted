@@ -23,7 +23,12 @@ function getInitialView() {
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((registration) => {
+    const isLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+    const publicUrl = process.env.PUBLIC_URL || '';
+    const isPublicPath = publicUrl && window.location.pathname.startsWith(publicUrl);
+    const serviceWorkerUrl = isLocalhost && !isPublicPath ? '/sw.js' : `${publicUrl}/sw.js`;
+
+    navigator.serviceWorker.register(serviceWorkerUrl).then((registration) => {
       console.log('Service worker registered:', registration);
 
       // Check for updates
