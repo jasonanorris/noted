@@ -62,6 +62,7 @@ Source of truth: `src/styles.css`.
 ### Cards And Rows
 
 - Document cards use `.document-card`.
+- Long document grids render cards through `LazyDocumentCard`, with `.document-card-skeleton` preserving layout while deferred cards load.
 - Management rows use `.management-row`.
 - Category rows use `.area-row`.
 - Cards and rows use subtle borders, medium radius, and limited hover elevation.

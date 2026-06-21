@@ -905,6 +905,31 @@ html {
   box-shadow: var(--shadow-sm);
 }
 
+.lazy-document-card {
+  min-width: 0;
+}
+
+.document-card-skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 12px;
+  border-radius: var(--border-radius-sm);
+  background: var(--color-surface-recessed);
+}
+
+.skeleton-title {
+  width: 72%;
+  height: 18px;
+}
+
+.skeleton-short {
+  width: 44%;
+}
+
 .document-card-category {
   max-width: 100%;
   color: var(--color-primary);

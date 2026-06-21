@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import DocumentCard from './DocumentCard';
+import LazyDocumentCard from './LazyDocumentCard';
 import { knowledgeDB } from '../db';
 import useScreenFocus from '../hooks/useScreenFocus';
 
@@ -267,8 +267,13 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
         {documentStatus === 'ready' && recentDocuments.length > 0 && (
           <div className="document-grid" aria-label="Recent documents">
-            {recentDocuments.map((document) => (
-              <DocumentCard document={document} key={document.id} onSelect={onOpenDocument} />
+            {recentDocuments.map((document, index) => (
+              <LazyDocumentCard
+                document={document}
+                eager={index < 6}
+                key={document.id}
+                onSelect={onOpenDocument}
+              />
             ))}
           </div>
         )}
