@@ -1,0 +1,76 @@
+import { useState } from 'react';
+import { knowledgeDB } from '../db';
+
+function readJsonFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      try {
+        resolve(JSON.parse(reader.result));
+      } catch (error) {
+        reject(new Error('Selected file is not valid JSON.'));
+      }
+    };
+
+    reader.onerror = () => reject(new Error('Selected file could not be read.'));
+    reader.readAsText(file);
+  });
+}
+
+function ImportScreen({ onBack }) {
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+
+  const handleImport = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setStatus('working');
+      setMessage('Restoring backup...');
+
+      const backupData = await readJsonFile(file);
+      await knowledgeDB.importData(backupData);
+
+      setStatus('success');
+      setMessage('Backup restored. Your documents have been refreshed.');
+    } catch (error) {
+      setStatus('error');
+      setMessage(error?.message || 'Backup could not be restored.');
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  return (
+    <main className="app-view">
+      <header className="app-view-header">
+        <button className="text-button" type="button" onClick={onBack}>
+          Back
+        </button>
+        <h1>Import</h1>
+      </header>
+
+      <section className="utility-panel" aria-label="Import backup">
+        <div>
+          <h2>Restore JSON Backup</h2>
+          <p>Select a Noted backup file to replace the local documents, categories, tags, and settings.</p>
+        </div>
+
+        <label className="file-picker">
+          <span>Choose JSON File</span>
+          <input type="file" accept="application/json,.json" onChange={handleImport} />
+        </label>
+
+        {message && (
+          <p className={`form-status ${status === 'error' ? 'is-error' : ''}`} role={status === 'error' ? 'alert' : 'status'}>
+            {message}
+          </p>
+        )}
+      </section>
+    </main>
+  );
+}
+
+export default ImportScreen;

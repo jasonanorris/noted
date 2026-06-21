@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PWA Installation Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system-font, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6em;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: #1a75af;
+      margin-bottom: 20px;
+    }
+
+    .status-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-card h2 {
+      font-size: 18px;
+      color: #1a75af;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .status-item:last-child {
+      border-bottom: none;
+    }
+
+    .status-label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .status-value {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .status-value.success {
+      color: #28a59f;
+    }
+
+    .status-value.warning {
+      color: #d37317;
+    }
+
+    .status-value.error {
+      color: #c40606;
+    }
+
+    button {
+      background-color: #1a75af;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+
+    button.secondary {
+      background-color: #e5e5e5;
+      color: #333;
+    }
+
+    .info-box {
+      background-color: #fffbe2;
+      border-left: 4px solid #d37317;
+      padding: 16px;
+      margin-bottom: 16px;
+      border-radius: 4px;
+    }
+
+    .info-box p {
+      font-size: 14px;
+      color: #856013;
+      margin-top: 0;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      .status-card h2 {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>PWA Installation Test</h1>
+
+  <div class="info-box">
+    <p>This page helps you verify that your Progressive Web Application is properly installed and working on mobile devices. Try installing the app from this page using your browser's "Add to Home Screen" feature.</p>
+  </div>
+
+  <div class="status-card">
+    <h2>Service Worker Status</h2>
+    <div class="status-item">
+      <span class="status-label">Registered:</span>
+      <span id="workerStatus" class="status-value">Checking...</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Active:</span>
+      <span id="workerActive" class="status-value">Checking...</span>
+    </div>
+  </div>
+
+  <div class="status-card">
+    <h2>Offline Support</h2>
+    <div class="status-item">
+      <span class="status-label">Online:</span>
+      <span id="onlineStatus" class="status-value">Checking...</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Cache Available:</span>
+      <span id="cacheAvailable" class="status-value">Checking...</span>
+    </div>
+  </div>
+
+  <div class="status-card">
+    <h2>App Installation</h2>
+    <div class="status-item">
+      <span class="status-label">Installed:</span>
+      <span id="installedStatus" class="status-value">Checking...</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Update Available:</span>
+      <span id="updateAvailable" class="status-value">Checking...</span>
+    </div>
+  </div>
+
+  <div class="status-card">
+    <h2>Storage Capacity</h2>
+    <div class="status-item">
+      <span class="status-label">IndexedDB Size:</span>
+      <span id="dbSize" class="status-value">Checking...</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Local Storage:</span>
+      <span id="localStorageSize" class="status-value">Checking...</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px;">
+    <button onclick="testOffline()">Test Offline Mode</button>
+    <button class="secondary" onclick="clearCache()">Clear Cache</button>
+    <button class="secondary" onclick="checkForUpdates()">Check for Updates</button>
+  </div>
+
+  <script>
+    // Service Worker Registration Check
+    async function checkWorkerStatus() {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        document.getElementById('workerStatus').textContent = 'Yes';
+        document.getElementById('workerStatus').className = 'status-value success';
+
+        if (registration.active && registration.active.state === 'activated') {
+          document.getElementById('workerActive').textContent = 'Yes';
+          document.getElementById('workerActive').className = 'status-value success';
+        } else {
+          document.getElementById('workerActive').textContent = 'No';
+          document.getElementById('workerActive').className = 'status-value warning';
+        }
+      } else {
+        document.getElementById('workerStatus').textContent = 'Not Supported';
+        document.getElementById('workerStatus').className = 'status-value error';
+        document.getElementById('workerActive').textContent = 'N/A';
+        document.getElementById('workerActive').className = 'status-value warning';
+      }
+    }
+
+    // Online/Offline Status
+    function checkOnlineStatus() {
+      const online = navigator.onLine;
+      document.getElementById('onlineStatus').textContent = online ? 'Yes' : 'No';
+      document.getElementById('onlineStatus').className = `status-value ${online ? 'success' : 'warning'}`;
+
+      // Check cache availability when offline
+      if (!online) {
+        checkCacheAvailability();
+      }
+    }
+
+    async function checkCacheAvailability() {
+      try {
+        const response = await fetch('/test-cache', { method: 'GET' });
+        document.getElementById('cacheAvailable').textContent = 'Yes';
+        document.getElementById('cacheAvailable').className = 'status-value success';
+      } catch (error) {
+        document.getElementById('cacheAvailable').textContent = 'No';
+        document.getElementById('cacheAvailable').className = 'status-value error';
+      }
+    }
+
+    // App Installation Status
+    async function checkInstallationStatus() {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        if (registration.installed) {
+          document.getElementById('installedStatus').textContent = 'Yes';
+          document.getElementById('installedStatus').className = 'status-value success';
+        } else {
+          document.getElementById('installedStatus').textContent = 'No';
+          document.getElementById('installedStatus').className = 'status-value warning';
+        }
+
+        // Check for updates
+        if (registration.installed && registration.updateAvailable) {
+          document.getElementById('updateAvailable').textContent = 'Yes';
+          document.getElementById('updateAvailable').className = 'status-value success';
+        } else {
+          document.getElementById('updateAvailable').textContent = 'No';
+          document.getElementById('updateAvailable').className = 'status-value warning';
+        }
+      } else {
+        document.getElementById('installedStatus').textContent = 'Not Supported';
+        document.getElementById('installedStatus').className = 'status-value error';
+        document.getElementById('updateAvailable').textContent = 'N/A';
+        document.getElementById('updateAvailable').className = 'status-value warning';
+      }
+    }
+
+    // Storage Capacity Check
+    async function checkStorageCapacity() {
+      try {
+        const dbSize = await getIndexedDBSize();
+        document.getElementById('dbSize').textContent = `${(dbSize / 1024).toFixed(2)} MB`;
+        document.getElementById('dbSize').className = 'status-value success';
+
+        const localStorageUsed = Object.keys(localStorage).reduce((total, key) => {
+          return total + (localStorage.getItem(key)?.length || 0);
+        }, 0);
+        
+        const localStorageTotal = localStorage.length * 5; // Approximate
+        document.getElementById('localStorageSize').textContent = `${(localStorageUsed / 1024).toFixed(2)} MB`;
+        document.getElementById('localStorageSize').className = 'status-value success';
+      } catch (error) {
+        document.getElementById('dbSize').textContent = 'Error';
+        document.getElementById('dbSize').className = 'status-value error';
+        document.getElementById('localStorageSize').textContent = 'Error';
+        document.getElementById('localStorageSize').className = 'status-value error';
+      }
+    }
+
+    async function getIndexedDBSize() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.databases();
+        request.onsuccess = () => {
+          const databases = request.result;
+          const dbInfo = databases.find(db => db.name === 'knowledge-app-db');
+          resolve(dbInfo?.size || 0);
+        };
+        request.onerror = reject;
+      });
+    }
+
+    // Test Offline Mode
+    function testOffline() {
+      navigator.serviceWorker.getRegistration().then(registration => {
+        registration.update();
+        
+        const messageChannel = new MessageChannel();
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data === 'offline-test-success') {
+            alert('Offline mode is working correctly!');
+          } else {
+            alert('Offline test failed.');
+          }
+        };
+
+        registration.active.postMessage({ type: 'test-offline' }, [messageChannel.port1]);
+      });
+    }
+
+    // Clear Cache
+    async function clearCache() {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        const cacheNames = await caches.keys();
+        for (const cacheName of cacheNames) {
+          await caches.delete(cacheName);
+        }
+
+        alert('Cache cleared successfully!');
+      } else {
+        alert('Service Worker not available.');
+      }
+    }
+
+    // Check for Updates
+    async function checkForUpdates() {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        try {
+          await registration.update();
+          
+          if (registration.installed && registration.updateAvailable) {
+            alert('Update available! Please restart the app to apply updates.');
+          } else {
+            alert('No updates available.');
+          }
+        } catch (error) {
+          alert(`Error checking for updates: ${error.message}`);
+        }
+      } else {
+        alert('Service Worker not available.');
+      }
+    }
+
+    // Initialize checks on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      checkWorkerStatus();
+      checkOnlineStatus();
+      checkInstallationStatus();
+      checkStorageCapacity();
+
+      // Listen for online/offline events
+      window.addEventListener('online', checkOnlineStatus);
+      window.addEventListener('offline', checkOnlineStatus);
+
+      // Listen for service worker update event
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.onupdateavailable = () => {
+          document.getElementById('updateAvailable').textContent = 'Yes';
+          document.getElementById('updateAvailable').className = 'status-value success';
+        };
+      }
+    });
+  </script>
+</body>
+</html>
