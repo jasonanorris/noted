@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 import HomeScreen from './components/HomeScreen';
 
@@ -38,6 +38,43 @@ function ViewLoadingFallback() {
       </div>
     </main>
   );
+}
+
+class RouteErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error) {
+    console.error('Route could not load:', error);
+  }
+
+  componentDidUpdate(previousProps) {
+    if (previousProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <main className="app-view">
+        <div className="document-state is-error route-loading-state" role="alert">
+          <strong>View could not load.</strong>
+          <span>Go back home and try again.</span>
+          <button className="text-button" type="button" onClick={this.props.onReset}>
+            Go Home
+          </button>
+        </div>
+      </main>
+    );
+  }
 }
 
 // Service Worker Registration
@@ -171,9 +208,11 @@ function App() {
 
   return (
     <div className="App">
-      <Suspense fallback={<ViewLoadingFallback />}>
-        {currentView}
-      </Suspense>
+      <RouteErrorBoundary resetKey={activeView} onReset={() => navigate('home')}>
+        <Suspense fallback={<ViewLoadingFallback />}>
+          {currentView}
+        </Suspense>
+      </RouteErrorBoundary>
     </div>
   );
 }

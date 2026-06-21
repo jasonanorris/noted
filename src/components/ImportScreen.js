@@ -23,6 +23,7 @@ function ImportScreen({ onBack }) {
   const headingRef = useScreenFocus();
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const isWorking = status === 'working';
 
   const handleImport = async (event) => {
     const file = event.target.files?.[0];
@@ -60,9 +61,15 @@ function ImportScreen({ onBack }) {
           <p>Select a Noted backup file to replace the local documents, categories, tags, and settings.</p>
         </div>
 
-        <label className="file-picker" htmlFor="backup-file">
-          <span>Choose JSON File</span>
-          <input id="backup-file" type="file" accept="application/json,.json" onChange={handleImport} />
+        <label className={`file-picker ${isWorking ? 'is-disabled' : ''}`} htmlFor="backup-file">
+          <span>{isWorking ? 'Restoring Backup...' : 'Choose JSON File'}</span>
+          <input
+            id="backup-file"
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImport}
+            disabled={isWorking}
+          />
         </label>
 
         {message && (

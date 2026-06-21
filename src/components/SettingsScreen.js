@@ -20,11 +20,17 @@ function SettingsScreen({ onBack }) {
   const [summary, setSummary] = useState({ documents: 0, categories: 0, tags: 0 });
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
+  const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
 
   const loadSummary = async ({ mounted = true } = {}) => {
     try {
+      if (mounted) {
+        setStatus((currentStatus) => (currentStatus === 'working' ? currentStatus : 'loading'));
+        setMessage('');
+      }
+
       const [documents, storedCategories, storedTags] = await Promise.all([
         knowledgeDB.getAllDocuments(),
         knowledgeDB.getAllCategories(),
@@ -39,9 +45,12 @@ function SettingsScreen({ onBack }) {
         });
         setCategories(storedCategories);
         setTags(storedTags);
+        setHasLoadedSummary(true);
+        setStatus('ready');
       }
     } catch (error) {
       if (mounted) {
+        setStatus('error');
         setMessage(error?.message || 'Storage summary could not be loaded.');
       }
     }
@@ -157,6 +166,11 @@ function SettingsScreen({ onBack }) {
     }
   };
 
+  const isLoading = status === 'loading';
+  const isWorking = status === 'working';
+  const isBusy = isLoading || isWorking;
+  const hasLoadError = status === 'error' && !hasLoadedSummary;
+
   return (
     <main className="app-view">
       <header className="app-view-header">
@@ -169,19 +183,33 @@ function SettingsScreen({ onBack }) {
       <section className="utility-panel" aria-label="App settings">
         <div>
           <h2>Local Storage</h2>
-          <p>{summary.documents} documents, {summary.categories} categories, {summary.tags} tags</p>
+          <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} documents, ${summary.categories} categories, ${summary.tags} tags`}</p>
         </div>
 
+        {isLoading && (
+          <div className="document-state" role="status">
+            <span className="spinner" aria-hidden="true"></span>
+            <span>Loading settings...</span>
+          </div>
+        )}
+
+        {hasLoadError && message && (
+          <div className="document-state is-error" role="alert">
+            <strong>Settings could not load.</strong>
+            <span>{message}</span>
+          </div>
+        )}
+
         <div className="utility-actions">
-          <button className="btn btn-primary" type="button" onClick={handleExport}>
-            Export JSON
+          <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
+            {isWorking ? 'Working...' : 'Export JSON'}
           </button>
-          <button className="btn btn-secondary" type="button" onClick={handleClear}>
+          <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={isBusy}>
             Clear Local Data
           </button>
         </div>
 
-        <div className="management-grid">
+        <div className="management-grid" aria-busy={isBusy}>
           <section aria-labelledby="category-management-title">
             <h2 id="category-management-title">Categories</h2>
             <div className="management-list">
@@ -192,10 +220,10 @@ function SettingsScreen({ onBack }) {
                     <small>{category.count || 0} documents</small>
                   </span>
                   <span className="management-actions">
-                    <button className="text-button" type="button" onClick={() => renameCategory(category)}>
+                    <button className="text-button" type="button" onClick={() => renameCategory(category)} disabled={isBusy}>
                       Rename
                     </button>
-                    <button className="text-button is-danger" type="button" onClick={() => deleteCategory(category)}>
+                    <button className="text-button is-danger" type="button" onClick={() => deleteCategory(category)} disabled={isBusy}>
                       Delete
                     </button>
                   </span>
@@ -216,10 +244,10 @@ function SettingsScreen({ onBack }) {
                     <small>{tag.count || 0} documents</small>
                   </span>
                   <span className="management-actions">
-                    <button className="text-button" type="button" onClick={() => renameTag(tag)}>
+                    <button className="text-button" type="button" onClick={() => renameTag(tag)} disabled={isBusy}>
                       Rename
                     </button>
-                    <button className="text-button is-danger" type="button" onClick={() => deleteTag(tag)}>
+                    <button className="text-button is-danger" type="button" onClick={() => deleteTag(tag)} disabled={isBusy}>
                       Delete
                     </button>
                   </span>
@@ -231,7 +259,7 @@ function SettingsScreen({ onBack }) {
           </section>
         </div>
 
-        {message && (
+        {message && !hasLoadError && (
           <p className={`form-status ${status === 'error' ? 'is-error' : ''}`} role={status === 'error' ? 'alert' : 'status'}>
             {message}
           </p>

@@ -73,6 +73,7 @@ Source of truth: `src/styles.css`.
 - Error state adds `.is-error`.
 - Loading indicators use `.spinner`.
 - Route chunk loading uses `.route-loading-state` inside `.app-view`.
+- Lazy route failures use the route error boundary and must offer a clear recovery action.
 - Keep empty-state copy short: a strong title plus one supporting sentence.
 
 ### Editor
