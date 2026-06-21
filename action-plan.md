@@ -68,7 +68,7 @@
 - [ ] Implement undo/redo in editor
 - [✓] Add auto-save functionality
 - [ ] Create document preview mode
-- [ ] Add screen-level regression tests for home, editor, search, and settings workflows
+- [✓] Add screen-level regression tests for home, editor, search, and settings workflows
 
 ## Phase 4: Polish & Deployment (Weeks 7-8)
 
@@ -136,8 +136,8 @@
 
 ## Next Steps
 
-1. Add screen-level regression tests for home, editor, search, and settings workflows
-2. Implement tag and category management for document organization
-3. Add document preview mode
-4. Test offline functionality thoroughly before final MVP polish
-5. Refine and document the consistent design system
+1. Implement tag and category management for document organization
+2. Add document preview mode
+3. Test offline functionality thoroughly before final MVP polish
+4. Refine and document the consistent design system
+5. Add keyboard shortcuts for common editor actions

@@ -1,0 +1,255 @@
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { test, expect } = require('@playwright/test');
+
+const stores = ['documents', 'categories', 'tags', 'settings'];
+
+async function openApp(page) {
+  await page.goto('http://localhost:3000');
+  await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+}
+
+async function clearDatabase(page) {
+  await page.evaluate((storeNames) => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('knowledge-app-db');
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(storeNames, 'readwrite');
+
+        storeNames.forEach((storeName) => transaction.objectStore(storeName).clear());
+
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error);
+        };
+      };
+    });
+  }, stores);
+}
+
+async function seedData(page, data) {
+  await page.evaluate(({ storeNames, backup }) => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('knowledge-app-db');
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(storeNames, 'readwrite');
+
+        storeNames.forEach((storeName) => {
+          const store = transaction.objectStore(storeName);
+          store.clear();
+          (backup[storeName] || []).forEach((record) => store.put(record));
+        });
+
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error);
+        };
+      };
+    });
+  }, { storeNames: stores, backup: data });
+}
+
+async function readStore(page, storeName) {
+  return page.evaluate((name) => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('knowledge-app-db');
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction([name], 'readonly');
+        const storeRequest = transaction.objectStore(name).getAll();
+
+        storeRequest.onsuccess = () => {
+          db.close();
+          resolve(storeRequest.result);
+        };
+        storeRequest.onerror = () => {
+          db.close();
+          reject(storeRequest.error);
+        };
+      };
+    });
+  }, storeName);
+}
+
+function createDocument(overrides = {}) {
+  const timestamp = overrides.updatedAt || Date.now();
+
+  return {
+    id: overrides.id || `doc-${timestamp}`,
+    title: overrides.title || 'Workflow Note',
+    content: overrides.content || 'Workflow content',
+    contentFormat: 'markdown',
+    preview: overrides.preview || overrides.content || 'Workflow content',
+    category: overrides.category || 'Projects',
+    categoryName: overrides.categoryName || overrides.category || 'Projects',
+    tags: overrides.tags || ['workflow'],
+    createdAt: overrides.createdAt || timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+test.describe('main workflow regressions', () => {
+  test('creates, edits, opens, and deletes a document', async ({ page }) => {
+    await openApp(page);
+    await clearDatabase(page);
+    await page.reload();
+
+    await page.getByRole('button', { name: 'Create new document' }).click();
+    await page.getByLabel('Title').fill('Workflow Draft');
+    await page.getByLabel('Category').fill('Projects');
+    await page.getByLabel('Tags').fill('workflow, draft');
+    await page.getByLabel('Content').fill('First workflow body');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('button', { name: /Workflow Draft/ })).toBeVisible();
+
+    await page.getByRole('button', { name: /Workflow Draft/ }).click();
+    await page.getByLabel('Title').fill('Workflow Draft Edited');
+    await page.getByLabel('Content').fill('Edited workflow body');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Back' }).click();
+
+    await expect(page.getByRole('button', { name: /Workflow Draft Edited/ })).toBeVisible();
+    await page.getByRole('button', { name: /Workflow Draft Edited/ }).click();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Delete' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Workflow Draft Edited/ })).toHaveCount(0);
+  });
+
+  test('loads recent documents from home and opens a selected card', async ({ page }) => {
+    await openApp(page);
+    await seedData(page, {
+      documents: [
+        createDocument({ id: 'older', title: 'Older Home Note', updatedAt: 1000 }),
+        createDocument({ id: 'newer', title: 'Newer Home Note', updatedAt: 2000 }),
+      ],
+      categories: [],
+      tags: [],
+      settings: [],
+    });
+    await page.reload();
+
+    await expect(page.getByRole('button', { name: /Newer Home Note/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Older Home Note/ })).toBeVisible();
+
+    const firstCardTitle = await page.locator('.document-card-title').first().textContent();
+    expect(firstCardTitle).toBe('Newer Home Note');
+
+    await page.getByRole('button', { name: /Older Home Note/ }).click();
+    await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
+    await expect(page.getByLabel('Title')).toHaveValue('Older Home Note');
+  });
+
+  test('filters search results and opens a matching document', async ({ page }) => {
+    await openApp(page);
+    await seedData(page, {
+      documents: [
+        createDocument({
+          id: 'search-match',
+          title: 'Searchable Workflow Note',
+          content: 'The query target lives here.',
+          category: 'Projects',
+          categoryName: 'Projects',
+          tags: ['mvp'],
+        }),
+        createDocument({
+          id: 'search-miss',
+          title: 'Archived Reference',
+          content: 'Different content',
+          category: 'Archive',
+          categoryName: 'Archive',
+          tags: ['reference'],
+        }),
+      ],
+      categories: [],
+      tags: [],
+      settings: [],
+    });
+    await page.reload();
+
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Search documents' }).fill('workflow');
+    await page.locator('.search-filter-grid select').first().selectOption('Projects');
+    await page.locator('.search-filter-grid select').nth(1).selectOption('mvp');
+
+    await expect(page.getByRole('button', { name: /Searchable Workflow Note/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Archived Reference/ })).toHaveCount(0);
+
+    await page.getByRole('button', { name: /Searchable Workflow Note/ }).click();
+    await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
+    await expect(page.getByLabel('Title')).toHaveValue('Searchable Workflow Note');
+  });
+
+  test('exports a backup and clears local data from settings', async ({ page }) => {
+    await openApp(page);
+    await seedData(page, {
+      documents: [createDocument({ id: 'exported', title: 'Exported Note' })],
+      categories: [],
+      tags: [],
+      settings: [],
+    });
+    await page.reload();
+
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export JSON' }).click();
+    const download = await downloadPromise;
+    const backup = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
+
+    expect(backup.documents).toHaveLength(1);
+    expect(backup.documents[0].title).toBe('Exported Note');
+    await expect(page.getByText('Backup downloaded.')).toBeVisible();
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Clear Local Data' }).click();
+    await expect(page.getByText('Local data cleared.')).toBeVisible();
+    expect(await readStore(page, 'documents')).toHaveLength(0);
+  });
+
+  test('imports a JSON backup and restores documents', async ({ page }) => {
+    await openApp(page);
+    await clearDatabase(page);
+
+    const backupPath = path.join(os.tmpdir(), `noted-backup-${Date.now()}.json`);
+    fs.writeFileSync(backupPath, JSON.stringify({
+      app: 'noted',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      documents: [createDocument({ id: 'imported', title: 'Imported Workflow Note' })],
+      categories: [],
+      tags: [],
+      settings: [],
+    }));
+
+    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByLabel('Choose JSON File').setInputFiles(backupPath);
+    await expect(page.getByText('Backup restored. Your documents have been refreshed.')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('button', { name: /Imported Workflow Note/ })).toBeVisible();
+
+    fs.unlinkSync(backupPath);
+  });
+});
