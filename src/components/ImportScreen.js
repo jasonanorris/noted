@@ -47,7 +47,7 @@ function ImportScreen({ onBack }) {
   };
 
   return (
-    <main className="app-view">
+    <main id="main-content" className="app-view" tabIndex="-1">
       <header className="app-view-header">
         <button className="text-button" type="button" onClick={onBack}>
           Back

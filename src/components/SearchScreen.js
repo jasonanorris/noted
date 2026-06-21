@@ -119,7 +119,7 @@ function SearchScreen({ onBack, onOpenDocument }) {
   const resultSummary = `${results.length} ${results.length === 1 ? 'result' : 'results'}`;
 
   return (
-    <main className="app-view search-view">
+    <main id="main-content" className="app-view search-view" tabIndex="-1">
       <header className="app-view-header">
         <button className="text-button" type="button" onClick={onBack}>
           Back

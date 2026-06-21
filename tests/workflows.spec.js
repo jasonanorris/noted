@@ -116,6 +116,7 @@ test.describe('main workflow regressions', () => {
     await page.getByLabel('Category').fill('Projects');
     await page.getByLabel('Tags').fill('workflow, draft');
     await page.getByLabel('Content').fill('shortcut body');
+    await page.getByLabel('Content').focus();
     await page.getByLabel('Content').selectText();
     await page.keyboard.press('Control+B');
     await expect(page.getByLabel('Content')).toHaveValue('**shortcut body**');

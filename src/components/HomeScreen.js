@@ -152,7 +152,9 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
   return (
     <main
+      id="main-content"
       className="home-screen"
+      tabIndex="-1"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

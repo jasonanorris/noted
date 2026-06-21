@@ -381,7 +381,7 @@ function EditorScreen({ document, onBack, onSaved }) {
   };
 
   return (
-    <main className="app-view editor-view" onKeyDown={handleEditorShortcut}>
+    <main id="main-content" className="app-view editor-view" tabIndex="-1" onKeyDown={handleEditorShortcut}>
       <header className="app-view-header">
         <button className="text-button" type="button" onClick={onBack}>
           Back
@@ -439,6 +439,7 @@ function EditorScreen({ document, onBack, onSaved }) {
                 onClick={() => setEditorMode('preview')}
                 aria-pressed={editorMode === 'preview'}
                 title="Toggle preview (Ctrl/Cmd+Shift+P)"
+                aria-keyshortcuts="Control+Shift+P Meta+Shift+P"
               >
                 Preview
               </button>
@@ -454,6 +455,7 @@ function EditorScreen({ document, onBack, onSaved }) {
                   onClick={undoContentChange}
                   disabled={!historyState.undo}
                   title="Undo (Ctrl/Cmd+Z)"
+                  aria-keyshortcuts="Control+Z Meta+Z"
                 >
                   Undo
                 </button>
@@ -463,6 +465,7 @@ function EditorScreen({ document, onBack, onSaved }) {
                   onClick={redoContentChange}
                   disabled={!historyState.redo}
                   title="Redo (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)"
+                  aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y Meta+Y"
                 >
                   Redo
                 </button>
@@ -472,6 +475,13 @@ function EditorScreen({ document, onBack, onSaved }) {
                     type="button"
                     key={action.id}
                     onClick={() => applyFormat(action)}
+                    aria-keyshortcuts={
+                      action.id === 'bold'
+                        ? 'Control+B Meta+B'
+                        : action.id === 'italic'
+                          ? 'Control+I Meta+I'
+                          : undefined
+                    }
                     title={
                       action.id === 'bold'
                         ? 'Bold (Ctrl/Cmd+B)'
@@ -527,7 +537,13 @@ function EditorScreen({ document, onBack, onSaved }) {
                 Delete
               </button>
             )}
-            <button className="btn btn-primary" type="button" onClick={() => saveDocument()} title="Save (Ctrl/Cmd+S)">
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => saveDocument()}
+              title="Save (Ctrl/Cmd+S)"
+              aria-keyshortcuts="Control+S Meta+S"
+            >
               Save
             </button>
           </div>

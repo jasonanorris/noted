@@ -30,7 +30,7 @@ function getInitialView() {
 
 function ViewLoadingFallback() {
   return (
-    <main className="app-view">
+    <main id="main-content" className="app-view" tabIndex="-1">
       <div className="document-state route-loading-state" role="status" aria-live="polite">
         <span className="spinner" aria-hidden="true" />
         <strong>Loading view</strong>
@@ -64,7 +64,7 @@ class RouteErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <main className="app-view">
+      <main id="main-content" className="app-view" tabIndex="-1">
         <div className="document-state is-error route-loading-state" role="alert">
           <strong>View could not load.</strong>
           <span>Go back home and try again.</span>
@@ -208,6 +208,7 @@ function App() {
 
   return (
     <div className="App">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <RouteErrorBoundary resetKey={activeView} onReset={() => navigate('home')}>
         <Suspense fallback={<ViewLoadingFallback />}>
           {currentView}

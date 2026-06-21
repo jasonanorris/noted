@@ -27,6 +27,11 @@ test.describe('screen accessibility', () => {
     await page.goto('http://localhost:3000');
 
     await expectFocusedHeading(page, 'Knowledge Storage');
+    await page.getByRole('link', { name: 'Skip to content' }).focus();
+    await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#main-content')).toBeFocused();
+
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Open settings' })).toBeFocused();
     await expectVisibleFocus(page);
@@ -40,6 +45,8 @@ test.describe('screen accessibility', () => {
     await expect(page.getByLabel('Category')).toBeVisible();
     await expect(page.getByLabel('Tags')).toBeVisible();
     await expect(page.getByLabel('Content')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveAttribute('aria-keyshortcuts', 'Control+S Meta+S');
+    await expect(page.getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-keyshortcuts', 'Control+B Meta+B');
 
     await page.keyboard.press('Tab');
     await expect(page.getByLabel('Title')).toBeFocused();

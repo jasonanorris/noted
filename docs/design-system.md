@@ -85,8 +85,11 @@ Source of truth: `src/styles.css`.
 
 ## Accessibility Rules
 
+- The app shell includes a skip link to `#main-content`; every screen-level `main` must keep that id and be focusable with `tabIndex="-1"`.
 - Every screen heading receives focus on entry.
 - Every control has a visible label or explicit accessible name.
+- Controls with keyboard shortcuts expose `aria-keyshortcuts`.
+- Motion-heavy UI must respect `prefers-reduced-motion`.
 - Focus rings must not be suppressed.
 - Dialog-like browser prompts are acceptable for MVP destructive actions, but copy must name the consequence.
 
