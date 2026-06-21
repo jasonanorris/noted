@@ -103,6 +103,8 @@ Source of truth: `src/styles.css`.
 
 Run these before shipping UI changes:
 
+- Responsive coverage includes fixed mobile/tablet/desktop viewport checks plus named device profiles for iPhone SE, Pixel 5, iPad Mini, and Desktop HD.
+
 ```bash
 npm run build
 CI=true npm test -- --watchAll=false

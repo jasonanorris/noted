@@ -1,9 +1,29 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect, devices } = require('@playwright/test');
 
 const viewports = [
   { name: 'mobile', width: 375, height: 812 },
   { name: 'tablet', width: 768, height: 1024 },
   { name: 'desktop', width: 1280, height: 900 },
+];
+
+function createDeviceProfile(device) {
+  const { defaultBrowserType, ...profile } = device;
+  return profile;
+}
+
+const deviceProfiles = [
+  { name: 'iPhone SE', use: createDeviceProfile(devices['iPhone SE']) },
+  { name: 'Pixel 5', use: createDeviceProfile(devices['Pixel 5']) },
+  { name: 'iPad Mini', use: createDeviceProfile(devices['iPad Mini']) },
+  {
+    name: 'Desktop HD',
+    use: {
+      viewport: { width: 1440, height: 900 },
+      deviceScaleFactor: 1,
+      isMobile: false,
+      hasTouch: false,
+    },
+  },
 ];
 
 async function expectNoHorizontalOverflow(page) {
@@ -42,6 +62,26 @@ async function expectElementsDoNotOverlap(page, selectors) {
 
       expect(overlaps, `${first.selector} overlaps ${second.selector}`).toBe(false);
     }
+  }
+}
+
+async function expectMinimumTargetSize(page, selector, minimumSize = 44) {
+  const boxes = await page.locator(selector).evaluateAll((elements) => {
+    return elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+      const name = element.getAttribute('aria-label') || element.textContent?.trim() || selector;
+
+      return {
+        name,
+        width: rect.width,
+        height: rect.height,
+      };
+    });
+  });
+
+  for (const box of boxes) {
+    expect(box.width, `${box.name} target width`).toBeGreaterThanOrEqual(minimumSize);
+    expect(box.height, `${box.name} target height`).toBeGreaterThanOrEqual(minimumSize);
   }
 }
 
@@ -143,6 +183,37 @@ test.describe('responsive MVP screens', () => {
       await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
+    });
+  }
+});
+
+test.describe('device profile coverage', () => {
+  for (const device of deviceProfiles) {
+    test.describe(device.name, () => {
+      test.use(device.use);
+
+      test('supports core navigation and touch targets', async ({ page }) => {
+        await page.goto('http://localhost:3000');
+
+        await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+        await expectMinimumTargetSize(page, '.quick-action');
+
+        await page.getByRole('button', { name: 'Create new document' }).click();
+        await expect(page.getByRole('heading', { name: 'New Document' })).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+        await expect(page.getByLabel('Content')).toBeVisible();
+
+        await page.getByRole('button', { name: 'Back' }).click();
+        await page.getByRole('button', { name: 'Search' }).click();
+        await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+
+        await page.getByRole('button', { name: 'Back' }).click();
+        await page.getByRole('button', { name: 'Settings', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+      });
     });
   }
 });
