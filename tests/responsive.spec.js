@@ -45,6 +45,52 @@ async function expectElementsDoNotOverlap(page, selectors) {
   }
 }
 
+async function seedSearchDocument(page, suffix) {
+  await page.evaluate((documentSuffix) => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('knowledge-app-db');
+
+      request.onupgradeneeded = () => {
+        const db = request.result;
+
+        if (!db.objectStoreNames.contains('documents')) {
+          db.createObjectStore('documents', { keyPath: 'id' });
+        }
+      };
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(['documents'], 'readwrite');
+        const store = transaction.objectStore('documents');
+        const timestamp = Date.now();
+
+        store.put({
+          id: `search-note-${documentSuffix}`,
+          title: `MVP Search Note ${documentSuffix}`,
+          content: '**formatted note**',
+          contentFormat: 'markdown',
+          preview: 'formatted note',
+          category: 'Projects',
+          categoryName: 'Projects',
+          tags: ['mvp'],
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        });
+
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error);
+        };
+      };
+    });
+  }, suffix);
+}
+
 test.describe('responsive MVP screens', () => {
   for (const viewport of viewports) {
     test(`${viewport.name} layout has stable core screens`, async ({ page }) => {
@@ -70,10 +116,16 @@ test.describe('responsive MVP screens', () => {
       await expect(page.getByPlaceholder('Start writing...')).toHaveValue('**formatted note**');
 
       await page.getByRole('button', { name: 'Back' }).click();
+      await seedSearchDocument(page, viewport.name);
       await page.getByRole('button', { name: 'Search' }).click();
       await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByPlaceholder('Search title, content, tags, or category')).toBeVisible();
+      await page.getByPlaceholder('Search title, content, tags, or category').fill('search');
+      await page.locator('.search-filter-grid select').first().selectOption('Projects');
+      await page.locator('.search-filter-grid select').nth(1).selectOption('mvp');
+      await expect(page.locator('.search-highlight').first()).toContainText(/search/i);
+      await expect(page.getByRole('button', { name: new RegExp(`MVP Search Note ${viewport.name}`, 'i') })).toBeVisible();
 
       await page.getByRole('button', { name: 'Back' }).click();
       await page.getByRole('button', { name: 'Import' }).click();

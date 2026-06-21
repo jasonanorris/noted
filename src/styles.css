@@ -254,6 +254,30 @@ html {
   gap: var(--spacing-lg);
 }
 
+.search-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.search-summary {
+  min-height: 36px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.search-highlight {
+  border-radius: 3px;
+  background: rgba(211, 115, 23, 0.22);
+  color: inherit;
+  padding: 0 2px;
+}
+
 .field {
   display: grid;
   gap: var(--spacing-sm);
@@ -918,6 +942,10 @@ html {
   }
 
   .document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-filter-grid {
     grid-template-columns: 1fr;
   }
 }

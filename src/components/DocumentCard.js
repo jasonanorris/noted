@@ -19,7 +19,11 @@ function getPreview(document) {
   return createPlainPreview(preview);
 }
 
-function DocumentCard({ document = {}, onSelect }) {
+function renderText(value, renderer) {
+  return renderer ? renderer(value) : value;
+}
+
+function DocumentCard({ document = {}, highlightText, onSelect }) {
   const title = document.title?.trim() || 'Untitled document';
   const preview = getPreview(document);
   const category = document.categoryName || document.category || 'Unfiled';
@@ -34,8 +38,8 @@ function DocumentCard({ document = {}, onSelect }) {
     <button className="document-card" type="button" onClick={handleSelect}>
       <span className="document-card-category">{category}</span>
 
-      <span className="document-card-title">{title}</span>
-      <span className="document-card-preview">{preview}</span>
+      <span className="document-card-title">{renderText(title, highlightText)}</span>
+      <span className="document-card-preview">{renderText(preview, highlightText)}</span>
 
       <span className="document-card-meta">
         <span>{formatUpdatedDate(updatedAt)}</span>
@@ -45,7 +49,7 @@ function DocumentCard({ document = {}, onSelect }) {
       <span className="document-card-tags" aria-label={tags.length ? 'Document tags' : 'No document tags'}>
         {tags.length ? (
           tags.map((tag) => (
-            <span className="document-card-tag" key={tag}>{tag}</span>
+            <span className="document-card-tag" key={tag}>{renderText(tag, highlightText)}</span>
           ))
         ) : (
           <span className="document-card-tag is-empty">Add tags</span>

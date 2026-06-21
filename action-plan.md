@@ -51,7 +51,7 @@
 - [✓] Add basic text formatting controls
 - [✓] Add rich text persistence to the document data model
 - [✓] Create MVP search interface with query input and result states
-- [ ] Add search filters and highlighted matches
+- [✓] Add search filters and highlighted matches
 - [✓] Create settings panel for app configuration
 - [ ] Add screen-level accessibility checks for keyboard navigation, focus states, and labels
 
@@ -136,8 +136,8 @@
 
 ## Next Steps
 
-1. Complete 2.2.2 by building the DocumentCard component
-2. Add recent document rendering and local filtering in 2.2.3
-3. Connect the home screen to IndexedDB in 2.2.4
-4. Wire app navigation and quick actions in 2.2.5 and 2.2.7
-5. Verify mobile, tablet, and desktop layouts before moving into editor work
+1. Add screen-level accessibility checks for keyboard navigation, focus states, and labels
+2. Add screen-level regression tests for home, editor, search, and settings workflows
+3. Implement tag and category management for document organization
+4. Add document preview mode
+5. Test offline functionality thoroughly before final MVP polish
