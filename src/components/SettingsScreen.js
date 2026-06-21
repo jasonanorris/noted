@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { knowledgeDB } from '../db';
+import {
+  formatPerformanceMetric,
+  getPerformanceMetrics,
+  summarizePerformanceMetrics,
+} from '../performanceMonitoring';
 import useScreenFocus from '../hooks/useScreenFocus';
 
 function downloadJson(data) {
@@ -23,6 +28,7 @@ function SettingsScreen({ onBack }) {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
+  const [performanceMetrics, setPerformanceMetrics] = useState(() => summarizePerformanceMetrics());
 
   const loadSummary = async ({ mounted = true } = {}) => {
     try {
@@ -63,6 +69,15 @@ function SettingsScreen({ onBack }) {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const refreshPerformanceMetrics = () => {
+      setPerformanceMetrics(summarizePerformanceMetrics(getPerformanceMetrics()));
+    };
+
+    window.addEventListener('performance:metric', refreshPerformanceMetrics);
+    return () => window.removeEventListener('performance:metric', refreshPerformanceMetrics);
   }, []);
 
   const handleExport = async () => {
@@ -258,6 +273,25 @@ function SettingsScreen({ onBack }) {
             </div>
           </section>
         </div>
+
+        <section aria-labelledby="performance-monitoring-title">
+          <h2 id="performance-monitoring-title">Performance</h2>
+          {performanceMetrics.length ? (
+            <div className="management-list">
+              {performanceMetrics.map((metric) => (
+                <div className="management-row" key={metric.name}>
+                  <span>
+                    <strong>{metric.name}</strong>
+                    <small>{metric.rating}</small>
+                  </span>
+                  <span>{formatPerformanceMetric(metric)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No performance metrics yet.</p>
+          )}
+        </section>
 
         {message && !hasLoadError && (
           <p className={`form-status ${status === 'error' ? 'is-error' : ''}`} role={status === 'error' ? 'alert' : 'status'}>

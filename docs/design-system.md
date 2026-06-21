@@ -83,6 +83,12 @@ Source of truth: `src/styles.css`.
 - Preview output uses `.editor-preview`; render structured React nodes rather than injecting HTML.
 - Editor shortcuts should mirror button actions: `Ctrl/Cmd+S` saves, `Ctrl/Cmd+Z` undoes content edits, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redoes content edits, `Ctrl/Cmd+B` applies bold, `Ctrl/Cmd+I` applies italic, `Ctrl/Cmd+Shift+P` toggles preview, and `Escape` returns from preview to edit mode.
 
+### Performance Monitoring
+
+- Web Vitals are recorded through `reportWebVitals(recordPerformanceMetric)`.
+- MVP metrics stay local in `localStorage` under `noted:performance-metrics`; do not send analytics data over the network without an explicit product decision.
+- Settings displays the latest metric per Web Vital using the same row pattern as management lists.
+
 ## Accessibility Rules
 
 - The app shell includes a skip link to `#main-content`; every screen-level `main` must keep that id and be focusable with `tabIndex="-1"`.
