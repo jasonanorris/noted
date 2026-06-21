@@ -119,6 +119,14 @@ test.describe('main workflow regressions', () => {
     await page.getByLabel('Content').selectText();
     await page.keyboard.press('Control+B');
     await expect(page.getByLabel('Content')).toHaveValue('**shortcut body**');
+    await page.keyboard.press('Control+Z');
+    await expect(page.getByLabel('Content')).toHaveValue('shortcut body');
+    await page.keyboard.press('Control+Y');
+    await expect(page.getByLabel('Content')).toHaveValue('**shortcut body**');
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(page.getByLabel('Content')).toHaveValue('shortcut body');
+    await page.getByRole('button', { name: 'Redo' }).click();
+    await expect(page.getByLabel('Content')).toHaveValue('**shortcut body**');
     await page.getByLabel('Content').fill('## Workflow Heading\nFirst **workflow** body\n- saved item');
     await page.keyboard.press('Control+Shift+P');
     await expect(page.getByRole('heading', { name: 'Workflow Heading' })).toBeVisible();

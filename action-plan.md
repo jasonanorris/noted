@@ -65,7 +65,7 @@
 
 ### 3.2 User Experience Enhancements
 - [✓] Add keyboard shortcuts
-- [ ] Implement undo/redo in editor
+- [✓] Implement undo/redo in editor
 - [✓] Add auto-save functionality
 - [✓] Create document preview mode
 - [✓] Add screen-level regression tests for home, editor, search, and settings workflows
@@ -136,7 +136,6 @@
 
 ## Next Steps
 
-1. Implement undo/redo in editor
-2. Optimize bundle size with code splitting
-3. Implement lazy loading for images and components
-4. Implement proper error states and loading indicators
+1. Optimize bundle size with code splitting
+2. Implement lazy loading for images and components
+3. Implement proper error states and loading indicators

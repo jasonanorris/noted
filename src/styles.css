@@ -392,6 +392,16 @@ html {
   color: var(--color-primary);
 }
 
+.format-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.format-button:disabled:hover {
+  border: var(--border-control);
+  color: var(--color-text);
+}
+
 .editor-content {
   min-height: 280px;
   resize: vertical;

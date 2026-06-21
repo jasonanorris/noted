@@ -4,6 +4,7 @@ import { createPlainPreview } from '../textFormatting';
 import useScreenFocus from '../hooks/useScreenFocus';
 
 const AUTO_SAVE_DELAY = 900;
+const HISTORY_LIMIT = 100;
 
 const formatActions = [
   { id: 'bold', label: 'Bold', marker: '**', type: 'wrap' },
@@ -103,6 +104,9 @@ function EditorScreen({ document, onBack, onSaved }) {
   const hasUserEdited = useRef(false);
   const autoSaveTimer = useRef(null);
   const contentInput = useRef(null);
+  const undoStack = useRef([]);
+  const redoStack = useRef([]);
+  const [historyState, setHistoryState] = useState({ undo: 0, redo: 0 });
 
   useEffect(() => {
     setCurrentDocument(document || null);
@@ -114,6 +118,9 @@ function EditorScreen({ document, onBack, onSaved }) {
     setStatus('idle');
     setError('');
     hasUserEdited.current = false;
+    undoStack.current = [];
+    redoStack.current = [];
+    setHistoryState({ undo: 0, redo: 0 });
   }, [document]);
 
   useEffect(() => {
@@ -207,7 +214,68 @@ function EditorScreen({ document, onBack, onSaved }) {
     setter(value);
   };
 
+  const refreshHistoryState = () => {
+    setHistoryState({
+      undo: undoStack.current.length,
+      redo: redoStack.current.length,
+    });
+  };
+
+  const restoreContentSelection = (selectionStart, selectionEnd = selectionStart) => {
+    if (selectionStart === undefined || selectionEnd === undefined) return;
+
+    window.requestAnimationFrame(() => {
+      contentInput.current?.focus();
+      contentInput.current?.setSelectionRange(selectionStart, selectionEnd);
+    });
+  };
+
+  const setEditedState = () => {
+    hasUserEdited.current = true;
+    if (status === 'saved' || status === 'autosaved') {
+      setStatus('idle');
+    }
+  };
+
+  const commitContentChange = (nextContent, selectionStart, selectionEnd = selectionStart) => {
+    if (nextContent === content) {
+      restoreContentSelection(selectionStart, selectionEnd);
+      return;
+    }
+
+    setEditedState();
+    undoStack.current = [...undoStack.current, content].slice(-HISTORY_LIMIT);
+    redoStack.current = [];
+    setContent(nextContent);
+    refreshHistoryState();
+    restoreContentSelection(selectionStart, selectionEnd);
+  };
+
+  const undoContentChange = () => {
+    const previousContent = undoStack.current.pop();
+    if (previousContent === undefined) return;
+
+    setEditedState();
+    redoStack.current = [...redoStack.current, content].slice(-HISTORY_LIMIT);
+    setContent(previousContent);
+    refreshHistoryState();
+    restoreContentSelection(previousContent.length);
+  };
+
+  const redoContentChange = () => {
+    const nextContent = redoStack.current.pop();
+    if (nextContent === undefined) return;
+
+    setEditedState();
+    undoStack.current = [...undoStack.current, content].slice(-HISTORY_LIMIT);
+    setContent(nextContent);
+    refreshHistoryState();
+    restoreContentSelection(nextContent.length);
+  };
+
   const applyFormat = (action) => {
+    if (!action) return;
+
     const input = contentInput.current;
     const selectionStart = input?.selectionStart ?? content.length;
     const selectionEnd = input?.selectionEnd ?? content.length;
@@ -239,12 +307,7 @@ function EditorScreen({ document, onBack, onSaved }) {
       }
     }
 
-    markEdited(setContent)(nextContent);
-
-    window.requestAnimationFrame(() => {
-      contentInput.current?.focus();
-      contentInput.current?.setSelectionRange(nextSelectionStart, nextSelectionEnd);
-    });
+    commitContentChange(nextContent, nextSelectionStart, nextSelectionEnd);
   };
 
   const handleDelete = async () => {
@@ -267,6 +330,7 @@ function EditorScreen({ document, onBack, onSaved }) {
   const handleEditorShortcut = (event) => {
     const isCommand = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
+    const isContentTarget = event.target === contentInput.current || event.target.closest?.('.format-toolbar');
 
     if (isCommand && !event.altKey && key === 's') {
       event.preventDefault();
@@ -274,14 +338,30 @@ function EditorScreen({ document, onBack, onSaved }) {
       return;
     }
 
-    if (isCommand && !event.altKey && key === 'b') {
+    if (isContentTarget && isCommand && !event.altKey && key === 'z') {
+      event.preventDefault();
+      if (event.shiftKey) {
+        redoContentChange();
+      } else {
+        undoContentChange();
+      }
+      return;
+    }
+
+    if (isContentTarget && isCommand && !event.altKey && key === 'y') {
+      event.preventDefault();
+      redoContentChange();
+      return;
+    }
+
+    if (isContentTarget && isCommand && !event.altKey && key === 'b') {
       event.preventDefault();
       setEditorMode('edit');
       applyFormat(formatActions.find((action) => action.id === 'bold'));
       return;
     }
 
-    if (isCommand && !event.altKey && key === 'i') {
+    if (isContentTarget && isCommand && !event.altKey && key === 'i') {
       event.preventDefault();
       setEditorMode('edit');
       applyFormat(formatActions.find((action) => action.id === 'italic'));
@@ -368,6 +448,24 @@ function EditorScreen({ document, onBack, onSaved }) {
           {editorMode === 'edit' ? (
             <>
               <div className="format-toolbar" aria-label="Formatting controls">
+                <button
+                  className="format-button"
+                  type="button"
+                  onClick={undoContentChange}
+                  disabled={!historyState.undo}
+                  title="Undo (Ctrl/Cmd+Z)"
+                >
+                  Undo
+                </button>
+                <button
+                  className="format-button"
+                  type="button"
+                  onClick={redoContentChange}
+                  disabled={!historyState.redo}
+                  title="Redo (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)"
+                >
+                  Redo
+                </button>
                 {formatActions.map((action) => (
                   <button
                     className="format-button"
@@ -391,7 +489,11 @@ function EditorScreen({ document, onBack, onSaved }) {
                 ref={contentInput}
                 className="input editor-content"
                 value={content}
-                onChange={(event) => markEdited(setContent)(event.target.value)}
+                onChange={(event) => commitContentChange(
+                  event.target.value,
+                  event.target.selectionStart,
+                  event.target.selectionEnd
+                )}
                 placeholder="Start writing..."
               />
             </>
