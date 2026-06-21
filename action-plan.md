@@ -58,8 +58,8 @@
 ## Phase 3: Advanced Features (Weeks 5-6)
 
 ### 3.1 Data Management
-- [ ] Implement tag system for document organization
-- [ ] Add category/folder structure
+- [✓] Implement tag system for document organization
+- [✓] Add category/folder structure
 - [✓] Create import/export functionality
 - [✓] Add backup/restore features
 
@@ -136,8 +136,8 @@
 
 ## Next Steps
 
-1. Implement tag and category management for document organization
-2. Add document preview mode
-3. Test offline functionality thoroughly before final MVP polish
-4. Refine and document the consistent design system
-5. Add keyboard shortcuts for common editor actions
+1. Add document preview mode
+2. Test offline functionality thoroughly before final MVP polish
+3. Refine and document the consistent design system
+4. Add keyboard shortcuts for common editor actions
+5. Implement undo/redo in editor

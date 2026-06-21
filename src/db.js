@@ -25,6 +25,10 @@ function createDocumentId() {
   return `doc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function createTaxonomyId(name) {
+  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unfiled';
+}
+
 function addRecord(store, record) {
   if (store.keyPath) {
     return store.add(record);
@@ -96,6 +100,10 @@ function validateBackupData(data) {
   });
 }
 
+function sortByName(first, second) {
+  return first.name.localeCompare(second.name);
+}
+
 export class KnowledgeDB {
   constructor() {
     this.db = null;
@@ -162,7 +170,7 @@ export class KnowledgeDB {
   async createDocument(document) {
     await this._ensureReady();
 
-    return new Promise((resolve, reject) => {
+    const savedDocument = await new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['documents'], 'readwrite');
       const store = transaction.objectStore('documents');
 
@@ -172,12 +180,13 @@ export class KnowledgeDB {
 
       const request = addRecord(store, document);
 
-      request.onsuccess = () => {
-        notifyDocumentsChanged();
-        resolve(document);
-      };
+      request.onsuccess = () => resolve(document);
       request.onerror = (error) => reject(error);
     });
+
+    await this.rebuildTaxonomy();
+    notifyDocumentsChanged();
+    return savedDocument;
   }
 
   async getDocument(id) {
@@ -197,7 +206,7 @@ export class KnowledgeDB {
   async updateDocument(id, updates) {
     await this._ensureReady();
 
-    return new Promise((resolve, reject) => {
+    const savedDocument = await new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['documents'], 'readwrite');
       const store = transaction.objectStore('documents');
 
@@ -210,32 +219,33 @@ export class KnowledgeDB {
         Object.assign(document, updates, { updatedAt: Date.now() });
 
         const updateRequest = putRecord(store, document, id);
-        updateRequest.onsuccess = () => {
-          notifyDocumentsChanged();
-          resolve(document);
-        };
+        updateRequest.onsuccess = () => resolve(document);
         updateRequest.onerror = (error) => reject(error);
       };
 
       request.onerror = (error) => reject(error);
     });
+
+    await this.rebuildTaxonomy();
+    notifyDocumentsChanged();
+    return savedDocument;
   }
 
   async deleteDocument(id) {
     await this._ensureReady();
 
-    return new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['documents'], 'readwrite');
       const store = transaction.objectStore('documents');
 
       const request = store.delete(id);
 
-      request.onsuccess = () => {
-        notifyDocumentsChanged();
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = (error) => reject(error);
     });
+
+    await this.rebuildTaxonomy();
+    notifyDocumentsChanged();
   }
 
   async getAllDocuments() {
@@ -349,20 +359,6 @@ export class KnowledgeDB {
     });
   }
 
-  async deleteCategory(id) {
-    await this._ensureReady();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['categories'], 'readwrite');
-      const store = transaction.objectStore('categories');
-
-      const request = store.delete(id);
-
-      request.onsuccess = () => resolve();
-      request.onerror = (error) => reject(error);
-    });
-  }
-
   async getAllCategories() {
     await this._ensureReady();
 
@@ -432,20 +428,6 @@ export class KnowledgeDB {
     });
   }
 
-  async deleteTag(id) {
-    await this._ensureReady();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['tags'], 'readwrite');
-      const store = transaction.objectStore('tags');
-
-      const request = store.delete(id);
-
-      request.onsuccess = () => resolve();
-      request.onerror = (error) => reject(error);
-    });
-  }
-
   async getAllTags() {
     await this._ensureReady();
 
@@ -458,6 +440,205 @@ export class KnowledgeDB {
       request.onsuccess = () => resolve(request.result);
       request.onerror = (error) => reject(error);
     });
+  }
+
+  async rebuildTaxonomy() {
+    await this._ensureReady();
+
+    const documents = await this.getAllDocuments();
+    const categoryMap = new Map();
+    const tagMap = new Map();
+    const timestamp = Date.now();
+
+    documents.forEach((document) => {
+      const categoryName = (document.categoryName || document.category || 'Unfiled').trim() || 'Unfiled';
+      const categoryId = createTaxonomyId(categoryName);
+      const category = categoryMap.get(categoryId) || {
+        id: categoryId,
+        name: categoryName,
+        count: 0,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+
+      category.count += 1;
+      category.updatedAt = timestamp;
+      categoryMap.set(categoryId, category);
+
+      if (Array.isArray(document.tags)) {
+        Array.from(new Set(document.tags.map((tag) => tag.trim()).filter(Boolean))).forEach((tagName) => {
+          const tagId = createTaxonomyId(tagName);
+          const tag = tagMap.get(tagId) || {
+            id: tagId,
+            name: tagName,
+            count: 0,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          };
+
+          tag.count += 1;
+          tag.updatedAt = timestamp;
+          tagMap.set(tagId, tag);
+        });
+      }
+    });
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['categories', 'tags'], 'readwrite');
+      const categoriesStore = transaction.objectStore('categories');
+      const tagsStore = transaction.objectStore('tags');
+
+      categoriesStore.clear();
+      tagsStore.clear();
+
+      Array.from(categoryMap.values()).sort(sortByName).forEach((category) => categoriesStore.put(category));
+      Array.from(tagMap.values()).sort(sortByName).forEach((tag) => tagsStore.put(tag));
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Tags and categories could not be rebuilt.'));
+    });
+  }
+
+  async renameCategory(id, nextName) {
+    await this._ensureReady();
+
+    const trimmedName = nextName.trim();
+    if (!trimmedName) throw new Error('Category name is required.');
+
+    const category = await this.getCategory(id);
+    if (!category) throw new Error('Category not found');
+
+    await new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['documents'], 'readwrite');
+      const store = transaction.objectStore('documents');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        request.result.forEach((document) => {
+          const currentCategory = document.categoryName || document.category || 'Unfiled';
+          if (currentCategory === category.name) {
+            store.put({
+              ...document,
+              category: trimmedName,
+              categoryName: trimmedName,
+              updatedAt: Date.now(),
+            });
+          }
+        });
+      };
+
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Category could not be renamed.'));
+    });
+
+    await this.rebuildTaxonomy();
+    notifyDocumentsChanged();
+  }
+
+  async deleteCategory(id) {
+    await this._ensureReady();
+
+    const category = await this.getCategory(id);
+    if (!category) throw new Error('Category not found');
+
+    await new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['documents'], 'readwrite');
+      const store = transaction.objectStore('documents');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        request.result.forEach((document) => {
+          const currentCategory = document.categoryName || document.category || 'Unfiled';
+          if (currentCategory === category.name) {
+            store.put({
+              ...document,
+              category: 'Unfiled',
+              categoryName: 'Unfiled',
+              updatedAt: Date.now(),
+            });
+          }
+        });
+      };
+
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Category could not be deleted.'));
+    });
+
+    await this.rebuildTaxonomy();
+    notifyDocumentsChanged();
+  }
+
+  async renameTag(id, nextName) {
+    await this._ensureReady();
+
+    const trimmedName = nextName.trim();
+    if (!trimmedName) throw new Error('Tag name is required.');
+
+    const tag = await this.getTag(id);
+    if (!tag) throw new Error('Tag not found');
+
+    await new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['documents'], 'readwrite');
+      const store = transaction.objectStore('documents');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        request.result.forEach((document) => {
+          if (!Array.isArray(document.tags) || !document.tags.includes(tag.name)) return;
+
+          const renamedTags = document.tags.map((currentTag) => (
+            currentTag === tag.name ? trimmedName : currentTag
+          ));
+
+          store.put({
+            ...document,
+            tags: Array.from(new Set(renamedTags)),
+            updatedAt: Date.now(),
+          });
+        });
+      };
+
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Tag could not be renamed.'));
+    });
+
+    await this.rebuildTaxonomy();
+    notifyDocumentsChanged();
+  }
+
+  async deleteTag(id) {
+    await this._ensureReady();
+
+    const tag = await this.getTag(id);
+    if (!tag) throw new Error('Tag not found');
+
+    await new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['documents'], 'readwrite');
+      const store = transaction.objectStore('documents');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        request.result.forEach((document) => {
+          if (!Array.isArray(document.tags) || !document.tags.includes(tag.name)) return;
+
+          store.put({
+            ...document,
+            tags: document.tags.filter((currentTag) => currentTag !== tag.name),
+            updatedAt: Date.now(),
+          });
+        });
+      };
+
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Tag could not be deleted.'));
+    });
+
+    await this.rebuildTaxonomy();
+    notifyDocumentsChanged();
   }
 
   // Settings operations
@@ -533,8 +714,12 @@ export class KnowledgeDB {
       const transaction = this.db.transaction(BACKUP_STORES, 'readwrite');
 
       transaction.oncomplete = () => {
-        notifyDocumentsChanged();
-        resolve();
+        this.rebuildTaxonomy()
+          .then(() => {
+            notifyDocumentsChanged();
+            resolve();
+          })
+          .catch(reject);
       };
       transaction.onerror = () => reject(transaction.error || new Error('Backup could not be restored.'));
 

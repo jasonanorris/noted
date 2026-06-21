@@ -119,6 +119,8 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
+    await expect.poll(async () => (await readStore(page, 'categories')).map((category) => category.name)).toContain('Projects');
+    await expect.poll(async () => (await readStore(page, 'tags')).map((tag) => tag.name)).toEqual(expect.arrayContaining(['draft', 'workflow']));
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page.getByRole('button', { name: /Workflow Draft/ })).toBeVisible();
 
@@ -144,8 +146,8 @@ test.describe('main workflow regressions', () => {
         createDocument({ id: 'older', title: 'Older Home Note', updatedAt: 1000 }),
         createDocument({ id: 'newer', title: 'Newer Home Note', updatedAt: 2000 }),
       ],
-      categories: [],
-      tags: [],
+      categories: [{ id: 'projects', name: 'Projects', count: 2, createdAt: 1000, updatedAt: 2000 }],
+      tags: [{ id: 'workflow', name: 'workflow', count: 2, createdAt: 1000, updatedAt: 2000 }],
       settings: [],
     });
     await page.reload();
@@ -155,6 +157,7 @@ test.describe('main workflow regressions', () => {
 
     const firstCardTitle = await page.locator('.document-card-title').first().textContent();
     expect(firstCardTitle).toBe('Newer Home Note');
+    await expect(page.getByRole('button', { name: 'Projects, 2 documents' })).toBeVisible();
 
     await page.getByRole('button', { name: /Older Home Note/ }).click();
     await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
@@ -226,6 +229,42 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Clear Local Data' }).click();
     await expect(page.getByText('Local data cleared.')).toBeVisible();
     expect(await readStore(page, 'documents')).toHaveLength(0);
+  });
+
+  test('renames categories and deletes tags from settings', async ({ page }) => {
+    await openApp(page);
+    await clearDatabase(page);
+    await page.reload();
+
+    await page.getByRole('button', { name: 'Create new document' }).click();
+    await page.getByLabel('Title').fill('Managed Taxonomy Note');
+    await page.getByLabel('Category').fill('Projects');
+    await page.getByLabel('Tags').fill('workflow, managed');
+    await page.getByLabel('Content').fill('Managed taxonomy body');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).click();
+
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(page.getByText('1 documents, 1 categories, 2 tags')).toBeVisible();
+
+    const projectRow = page.locator('.management-row').filter({ hasText: 'Projects' });
+    page.once('dialog', (dialog) => dialog.accept('Renamed Projects'));
+    await projectRow.getByRole('button', { name: 'Rename' }).click();
+    await expect(page.getByText('Category renamed.')).toBeVisible();
+    await expect(page.getByText('Renamed Projects')).toBeVisible();
+
+    const managedTagRow = page.locator('.management-row').filter({ hasText: 'managed' });
+    page.once('dialog', (dialog) => dialog.accept());
+    await managedTagRow.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('Tag deleted.')).toBeVisible();
+    await expect(page.getByText('managed')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('button', { name: 'Renamed Projects, 1 documents' })).toBeVisible();
+    await page.getByRole('button', { name: /Managed Taxonomy Note/ }).click();
+    await expect(page.getByLabel('Category')).toHaveValue('Renamed Projects');
+    await expect(page.getByLabel('Tags')).toHaveValue('workflow');
   });
 
   test('imports a JSON backup and restores documents', async ({ page }) => {

@@ -13,12 +13,6 @@ const quickActions = [
   { id: 'settings', label: 'Settings', symbol: '*' },
 ];
 
-const pinnedAreas = [
-  { id: 'ideas', label: 'Ideas', count: 0 },
-  { id: 'projects', label: 'Projects', count: 0 },
-  { id: 'archive', label: 'Archive', count: 0 },
-];
-
 function getDocumentTime(document) {
   const value = document.updatedAt || document.lastModified || document.createdAt || 0;
   const date = new Date(value);
@@ -30,6 +24,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
   const headingRef = useScreenFocus();
   const [activeFilter, setActiveFilter] = useState('All');
   const [documents, setDocuments] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [documentStatus, setDocumentStatus] = useState('loading');
   const [documentError, setDocumentError] = useState('');
   const [pullDistance, setPullDistance] = useState(0);
@@ -48,11 +43,16 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
       if (!silent) setDocumentStatus('loading');
       setDocumentError('');
 
-      const storedDocuments = await knowledgeDB.getAllDocuments();
+      const [storedDocuments, storedCategories] = await Promise.all([
+        knowledgeDB.getAllDocuments(),
+        knowledgeDB.getAllCategories(),
+      ]);
       setDocuments(Array.isArray(storedDocuments) ? storedDocuments : []);
+      setCategories(Array.isArray(storedCategories) ? storedCategories : []);
       setDocumentStatus('ready');
     } catch (error) {
       setDocuments([]);
+      setCategories([]);
       setDocumentStatus('error');
       setDocumentError(error?.message || 'Local documents could not be loaded.');
     }
@@ -90,6 +90,16 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
       })
       .sort((first, second) => getDocumentTime(second) - getDocumentTime(first));
   }, [activeFilter, documents]);
+
+  const categoryAreas = useMemo(() => {
+    return [...categories].sort((first, second) => {
+      if ((second.count || 0) !== (first.count || 0)) {
+        return (second.count || 0) - (first.count || 0);
+      }
+
+      return first.name.localeCompare(second.name);
+    });
+  }, [categories]);
 
   const handleTouchStart = (event) => {
     if (window.scrollY > 0 || documentStatus === 'loading') {
@@ -266,16 +276,27 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
       <section className="home-section" aria-labelledby="areas-title">
         <div className="home-section-header">
-          <h2 id="areas-title">Pinned Areas</h2>
+          <h2 id="areas-title">Categories</h2>
         </div>
 
         <div className="area-list">
-          {pinnedAreas.map((area) => (
-            <button className="area-row" type="button" key={area.id} aria-label={`${area.label}, ${area.count} documents`}>
-              <span>{area.label}</span>
-              <span>{area.count}</span>
+          {categoryAreas.length ? categoryAreas.map((area) => (
+            <button
+              className="area-row"
+              type="button"
+              key={area.id}
+              aria-label={`${area.name}, ${area.count || 0} documents`}
+              onClick={() => setActiveFilter(area.name)}
+            >
+              <span>{area.name}</span>
+              <span>{area.count || 0}</span>
             </button>
-          ))}
+          )) : (
+            <div className="document-state">
+              <strong>No categories yet</strong>
+              <span>Save a document with a category to organize this list.</span>
+            </div>
+          )}
         </div>
       </section>
     </main>
