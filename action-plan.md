@@ -62,7 +62,7 @@
 - [✓] Add category/folder structure
 - [✓] Create import/export functionality
 - [✓] Add backup/restore features
-- [ ] Add storage usage display in Settings
+- [✓] Add storage usage display in Settings
   - Acceptance: shows estimated browser storage usage/quota when available
   - Acceptance: gracefully explains when storage estimates are unavailable
 - [ ] Add backup reminder/guidance for local-first data
@@ -149,8 +149,7 @@
 
 ## Next Steps
 
-1. Add storage usage display in Settings
-2. Add backup reminder/guidance for local-first data
-3. Complete real-device PWA smoke test
-4. Define MVP done criteria
-5. Configure build optimization for production
+1. Add backup reminder/guidance for local-first data
+2. Complete real-device PWA smoke test
+3. Define MVP done criteria
+4. Configure build optimization for production

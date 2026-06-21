@@ -105,6 +105,20 @@ function createDocument(overrides = {}) {
   };
 }
 
+async function mockStorageEstimate(page) {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: {
+        estimate: async () => ({
+          usage: 1572864,
+          quota: 104857600,
+        }),
+      },
+    });
+  });
+}
+
 test.describe('main workflow regressions', () => {
   test('creates, edits, opens, and deletes a document', async ({ page }) => {
     await openApp(page);
@@ -224,6 +238,7 @@ test.describe('main workflow regressions', () => {
   });
 
   test('exports a backup and clears local data from settings', async ({ page }) => {
+    await mockStorageEstimate(page);
     await openApp(page);
     await seedData(page, {
       documents: [createDocument({ id: 'exported', title: 'Exported Note' })],
@@ -234,6 +249,9 @@ test.describe('main workflow regressions', () => {
     await page.reload();
 
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
+    await expect(page.getByText('1.5 MB used')).toBeVisible();
+    await expect(page.getByText('100 MB available to this browser profile')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export JSON' }).click();
@@ -248,6 +266,23 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Clear Local Data' }).click();
     await expect(page.getByText('Local data cleared.')).toBeVisible();
     expect(await readStore(page, 'documents')).toHaveLength(0);
+  });
+
+  test('explains when browser storage estimates are unavailable', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'storage', {
+        configurable: true,
+        value: undefined,
+      });
+    });
+
+    await openApp(page);
+    await clearDatabase(page);
+    await page.reload();
+
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
+    await expect(page.getByText('Storage estimates are not available in this browser.')).toBeVisible();
   });
 
   test('renames categories and deletes tags from settings', async ({ page }) => {

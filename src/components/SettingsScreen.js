@@ -20,6 +20,22 @@ function downloadJson(data) {
   URL.revokeObjectURL(url);
 }
 
+function formatStorageSize(bytes) {
+  if (!Number.isFinite(bytes)) return 'Unknown';
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  const precision = value >= 10 || unitIndex === 0 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[unitIndex]}`;
+}
+
 function SettingsScreen({ onBack }) {
   const headingRef = useScreenFocus();
   const [summary, setSummary] = useState({ documents: 0, categories: 0, tags: 0 });
@@ -29,6 +45,12 @@ function SettingsScreen({ onBack }) {
   const [message, setMessage] = useState('');
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
   const [performanceMetrics, setPerformanceMetrics] = useState(() => summarizePerformanceMetrics());
+  const [storageEstimate, setStorageEstimate] = useState({
+    status: 'loading',
+    usage: null,
+    quota: null,
+    message: '',
+  });
 
   const loadSummary = async ({ mounted = true } = {}) => {
     try {
@@ -78,6 +100,52 @@ function SettingsScreen({ onBack }) {
 
     window.addEventListener('performance:metric', refreshPerformanceMetrics);
     return () => window.removeEventListener('performance:metric', refreshPerformanceMetrics);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadStorageEstimate() {
+      if (!navigator.storage?.estimate) {
+        if (isMounted) {
+          setStorageEstimate({
+            status: 'unavailable',
+            usage: null,
+            quota: null,
+            message: 'Storage estimates are not available in this browser.',
+          });
+        }
+        return;
+      }
+
+      try {
+        const estimate = await navigator.storage.estimate();
+
+        if (isMounted) {
+          setStorageEstimate({
+            status: 'ready',
+            usage: estimate.usage,
+            quota: estimate.quota,
+            message: '',
+          });
+        }
+      } catch (error) {
+        if (isMounted) {
+          setStorageEstimate({
+            status: 'unavailable',
+            usage: null,
+            quota: null,
+            message: 'Storage usage could not be estimated.',
+          });
+        }
+      }
+    }
+
+    loadStorageEstimate();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleExport = async () => {
@@ -200,6 +268,30 @@ function SettingsScreen({ onBack }) {
           <h2>Local Storage</h2>
           <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} documents, ${summary.categories} categories, ${summary.tags} tags`}</p>
         </div>
+
+        <section aria-labelledby="storage-usage-title">
+          <h2 id="storage-usage-title">Storage Usage</h2>
+          {storageEstimate.status === 'loading' && (
+            <div className="document-state" role="status">
+              <span className="spinner" aria-hidden="true"></span>
+              <span>Estimating storage...</span>
+            </div>
+          )}
+          {storageEstimate.status === 'ready' && (
+            <div className="management-row">
+              <span>
+                <strong>{formatStorageSize(storageEstimate.usage)} used</strong>
+                <small>{formatStorageSize(storageEstimate.quota)} available to this browser profile</small>
+              </span>
+              {Number.isFinite(storageEstimate.usage) && Number.isFinite(storageEstimate.quota) && storageEstimate.quota > 0 && (
+                <span>{Math.round((storageEstimate.usage / storageEstimate.quota) * 100)}%</span>
+              )}
+            </div>
+          )}
+          {storageEstimate.status === 'unavailable' && (
+            <p>{storageEstimate.message}</p>
+          )}
+        </section>
 
         {isLoading && (
           <div className="document-state" role="status">
