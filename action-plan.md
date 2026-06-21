@@ -62,6 +62,12 @@
 - [✓] Add category/folder structure
 - [✓] Create import/export functionality
 - [✓] Add backup/restore features
+- [ ] Add storage usage display in Settings
+  - Acceptance: shows estimated browser storage usage/quota when available
+  - Acceptance: gracefully explains when storage estimates are unavailable
+- [ ] Add backup reminder/guidance for local-first data
+  - Acceptance: Settings clearly tells users notes are stored on this device/browser
+  - Acceptance: encourages regular JSON exports before clearing data or changing devices
 
 ### 3.2 User Experience Enhancements
 - [✓] Add keyboard shortcuts
@@ -83,6 +89,13 @@
 - [✓] Add accessibility features
 - [✓] Implement proper error states and loading indicators
 - [✓] Test offline functionality thoroughly
+- [ ] Complete real-device PWA smoke test
+  - Acceptance: install from GitHub Pages on a phone
+  - Acceptance: create, edit, search, export, import, and reopen notes while offline
+  - Acceptance: confirm app launches from the saved home-screen icon
+- [ ] Define MVP done criteria
+  - Acceptance: checklist covers install, offline load, create note, edit note, search, export, restore, clear data, and GitHub Pages deploy
+  - Acceptance: unresolved post-MVP work is separated from release blockers
 
 ## Phase 5: Deployment & Maintenance (Ongoing)
 
@@ -136,7 +149,8 @@
 
 ## Next Steps
 
-1. Configure build optimization for production
-2. Set up hosting environment
-3. Implement HTTPS and security measures
-4. Add monitoring and logging
+1. Add storage usage display in Settings
+2. Add backup reminder/guidance for local-first data
+3. Complete real-device PWA smoke test
+4. Define MVP done criteria
+5. Configure build optimization for production
