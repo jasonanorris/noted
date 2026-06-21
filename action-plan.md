@@ -67,7 +67,7 @@
 - [ ] Add keyboard shortcuts
 - [ ] Implement undo/redo in editor
 - [✓] Add auto-save functionality
-- [ ] Create document preview mode
+- [✓] Create document preview mode
 - [✓] Add screen-level regression tests for home, editor, search, and settings workflows
 
 ## Phase 4: Polish & Deployment (Weeks 7-8)
@@ -136,8 +136,8 @@
 
 ## Next Steps
 
-1. Add document preview mode
-2. Test offline functionality thoroughly before final MVP polish
-3. Refine and document the consistent design system
-4. Add keyboard shortcuts for common editor actions
-5. Implement undo/redo in editor
+1. Test offline functionality thoroughly before final MVP polish
+2. Refine and document the consistent design system
+3. Add keyboard shortcuts for common editor actions
+4. Implement undo/redo in editor
+5. Optimize bundle size with code splitting

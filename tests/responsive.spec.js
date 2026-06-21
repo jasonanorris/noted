@@ -114,6 +114,11 @@ test.describe('responsive MVP screens', () => {
       await page.getByPlaceholder('Start writing...').selectText();
       await page.getByRole('button', { name: 'Bold' }).click();
       await expect(page.getByPlaceholder('Start writing...')).toHaveValue('**formatted note**');
+      await page.getByRole('button', { name: 'Preview' }).click();
+      await expect(page.getByLabel('Document preview')).toContainText('formatted note');
+      await expect(page.locator('strong').first()).toContainText('formatted note');
+      await page.getByRole('button', { name: 'Edit' }).click();
+      await expect(page.getByPlaceholder('Start writing...')).toHaveValue('**formatted note**');
 
       await page.getByRole('button', { name: 'Back' }).click();
       await seedSearchDocument(page, viewport.name);

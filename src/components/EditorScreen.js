@@ -23,6 +23,73 @@ function parseTags(value) {
     .filter(Boolean);
 }
 
+function renderInlineFormatting(value) {
+  const parts = String(value).split(/(\*\*[^*]+\*\*|_[^_]+_)/g).filter(Boolean);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={`${part}-${index}`}>{part.slice(2, -2)}</strong>;
+    }
+
+    if (part.startsWith('_') && part.endsWith('_')) {
+      return <em key={`${part}-${index}`}>{part.slice(1, -1)}</em>;
+    }
+
+    return part;
+  });
+}
+
+function renderPreviewBlocks(value) {
+  const lines = value.split('\n');
+  const blocks = [];
+  let bullets = [];
+
+  const flushBullets = () => {
+    if (!bullets.length) return;
+
+    blocks.push(
+      <ul className="editor-preview-list" key={`list-${blocks.length}`}>
+        {bullets.map((bullet, index) => (
+          <li key={`${bullet}-${index}`}>{renderInlineFormatting(bullet)}</li>
+        ))}
+      </ul>
+    );
+    bullets = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmedLine = line.trim();
+
+    if (!trimmedLine) {
+      flushBullets();
+      return;
+    }
+
+    if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+      bullets.push(trimmedLine.slice(2));
+      return;
+    }
+
+    flushBullets();
+
+    if (trimmedLine.startsWith('## ')) {
+      blocks.push(<h2 key={`heading-${blocks.length}`}>{renderInlineFormatting(trimmedLine.slice(3))}</h2>);
+      return;
+    }
+
+    if (trimmedLine.startsWith('# ')) {
+      blocks.push(<h2 key={`heading-${blocks.length}`}>{renderInlineFormatting(trimmedLine.slice(2))}</h2>);
+      return;
+    }
+
+    blocks.push(<p key={`paragraph-${blocks.length}`}>{renderInlineFormatting(trimmedLine)}</p>);
+  });
+
+  flushBullets();
+
+  return blocks;
+}
+
 function EditorScreen({ document, onBack, onSaved }) {
   const headingRef = useScreenFocus();
   const [currentDocument, setCurrentDocument] = useState(document || null);
@@ -30,6 +97,7 @@ function EditorScreen({ document, onBack, onSaved }) {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
   const [tagText, setTagText] = useState('');
+  const [editorMode, setEditorMode] = useState('edit');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const hasUserEdited = useRef(false);
@@ -42,6 +110,7 @@ function EditorScreen({ document, onBack, onSaved }) {
     setContent(document?.content || document?.preview || '');
     setCategory(document?.categoryName || document?.category || '');
     setTagText(createTagText(document?.tags || []));
+    setEditorMode('edit');
     setStatus('idle');
     setError('');
     hasUserEdited.current = false;
@@ -58,6 +127,8 @@ function EditorScreen({ document, onBack, onSaved }) {
   const canSave = useMemo(() => {
     return title.trim().length > 0 || content.trim().length > 0;
   }, [content, title]);
+
+  const previewBlocks = useMemo(() => renderPreviewBlocks(content), [content]);
 
   const saveDocument = useCallback(async ({ auto = false } = {}) => {
     if (!canSave) {
@@ -234,28 +305,62 @@ function EditorScreen({ document, onBack, onSaved }) {
         </label>
 
         <div className="field editor-content-field">
-          <label htmlFor="editor-content">Content</label>
-          <div className="format-toolbar" aria-label="Formatting controls">
-            {formatActions.map((action) => (
+          <div className="editor-content-heading">
+            <label htmlFor="editor-content">Content</label>
+            <div className="segmented-control" aria-label="Editor mode">
               <button
-                className="format-button"
+                className={`segmented-button ${editorMode === 'edit' ? 'is-active' : ''}`}
                 type="button"
-                key={action.id}
-                onClick={() => applyFormat(action)}
-                title={action.label}
+                onClick={() => setEditorMode('edit')}
+                aria-pressed={editorMode === 'edit'}
               >
-                {action.label}
+                Edit
               </button>
-            ))}
+              <button
+                className={`segmented-button ${editorMode === 'preview' ? 'is-active' : ''}`}
+                type="button"
+                onClick={() => setEditorMode('preview')}
+                aria-pressed={editorMode === 'preview'}
+              >
+                Preview
+              </button>
+            </div>
           </div>
-          <textarea
-            id="editor-content"
-            ref={contentInput}
-            className="input editor-content"
-            value={content}
-            onChange={(event) => markEdited(setContent)(event.target.value)}
-            placeholder="Start writing..."
-          />
+
+          {editorMode === 'edit' ? (
+            <>
+              <div className="format-toolbar" aria-label="Formatting controls">
+                {formatActions.map((action) => (
+                  <button
+                    className="format-button"
+                    type="button"
+                    key={action.id}
+                    onClick={() => applyFormat(action)}
+                    title={action.label}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                id="editor-content"
+                ref={contentInput}
+                className="input editor-content"
+                value={content}
+                onChange={(event) => markEdited(setContent)(event.target.value)}
+                placeholder="Start writing..."
+              />
+            </>
+          ) : (
+            <div className="editor-preview" aria-label="Document preview">
+              {previewBlocks.length ? previewBlocks : (
+                <div className="document-state">
+                  <strong>No preview yet</strong>
+                  <span>Switch to edit mode and add note content.</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {error && (

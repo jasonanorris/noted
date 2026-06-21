@@ -115,7 +115,12 @@ test.describe('main workflow regressions', () => {
     await page.getByLabel('Title').fill('Workflow Draft');
     await page.getByLabel('Category').fill('Projects');
     await page.getByLabel('Tags').fill('workflow, draft');
-    await page.getByLabel('Content').fill('First workflow body');
+    await page.getByLabel('Content').fill('## Workflow Heading\nFirst **workflow** body\n- saved item');
+    await page.getByRole('button', { name: 'Preview' }).click();
+    await expect(page.getByRole('heading', { name: 'Workflow Heading' })).toBeVisible();
+    await expect(page.getByLabel('Document preview')).toContainText('First workflow body');
+    await expect(page.getByText('saved item')).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();

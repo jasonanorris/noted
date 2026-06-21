@@ -304,6 +304,39 @@ html {
   min-height: 280px;
 }
 
+.editor-content-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.segmented-control {
+  min-height: 36px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--border-radius-md);
+  background: var(--color-tertiary);
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.segmented-button {
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.segmented-button.is-active {
+  background: var(--color-primary);
+  color: white;
+}
+
 .format-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -335,6 +368,36 @@ html {
   min-height: 280px;
   resize: vertical;
   line-height: 1.5;
+}
+
+.editor-preview {
+  min-height: 280px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: var(--border-radius-md);
+  background: var(--color-secondary);
+  display: grid;
+  align-content: start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  color: var(--color-text);
+  line-height: 1.55;
+}
+
+.editor-preview h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.editor-preview p {
+  color: var(--color-text);
+}
+
+.editor-preview-list {
+  display: grid;
+  gap: var(--spacing-xs);
+  padding-left: var(--spacing-xl);
 }
 
 .editor-actions {
@@ -998,6 +1061,11 @@ html {
 
   .document-grid {
     grid-template-columns: 1fr;
+  }
+
+  .editor-content-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .search-filter-grid {
