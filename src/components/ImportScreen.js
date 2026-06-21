@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { knowledgeDB } from '../db';
+import useScreenFocus from '../hooks/useScreenFocus';
 
 function readJsonFile(file) {
   return new Promise((resolve, reject) => {
@@ -19,6 +20,7 @@ function readJsonFile(file) {
 }
 
 function ImportScreen({ onBack }) {
+  const headingRef = useScreenFocus();
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
@@ -49,7 +51,7 @@ function ImportScreen({ onBack }) {
         <button className="text-button" type="button" onClick={onBack}>
           Back
         </button>
-        <h1>Import</h1>
+        <h1 ref={headingRef} tabIndex="-1">Import</h1>
       </header>
 
       <section className="utility-panel" aria-label="Import backup">
@@ -58,9 +60,9 @@ function ImportScreen({ onBack }) {
           <p>Select a Noted backup file to replace the local documents, categories, tags, and settings.</p>
         </div>
 
-        <label className="file-picker">
+        <label className="file-picker" htmlFor="backup-file">
           <span>Choose JSON File</span>
-          <input type="file" accept="application/json,.json" onChange={handleImport} />
+          <input id="backup-file" type="file" accept="application/json,.json" onChange={handleImport} />
         </label>
 
         {message && (

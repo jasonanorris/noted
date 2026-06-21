@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { knowledgeDB } from '../db';
+import useScreenFocus from '../hooks/useScreenFocus';
 
 function downloadJson(data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -15,6 +16,7 @@ function downloadJson(data) {
 }
 
 function SettingsScreen({ onBack }) {
+  const headingRef = useScreenFocus();
   const [summary, setSummary] = useState({ documents: 0, categories: 0, tags: 0 });
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
@@ -87,7 +89,7 @@ function SettingsScreen({ onBack }) {
         <button className="text-button" type="button" onClick={onBack}>
           Back
         </button>
-        <h1>Settings</h1>
+        <h1 ref={headingRef} tabIndex="-1">Settings</h1>
       </header>
 
       <section className="utility-panel" aria-label="App settings">

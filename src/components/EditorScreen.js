@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { knowledgeDB } from '../db';
 import { createPlainPreview } from '../textFormatting';
+import useScreenFocus from '../hooks/useScreenFocus';
 
 const AUTO_SAVE_DELAY = 900;
 
@@ -23,6 +24,7 @@ function parseTags(value) {
 }
 
 function EditorScreen({ document, onBack, onSaved }) {
+  const headingRef = useScreenFocus();
   const [currentDocument, setCurrentDocument] = useState(document || null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -197,7 +199,7 @@ function EditorScreen({ document, onBack, onSaved }) {
         <button className="text-button" type="button" onClick={onBack}>
           Back
         </button>
-        <h1>{document?.id ? 'Edit Document' : 'New Document'}</h1>
+        <h1 ref={headingRef} tabIndex="-1">{document?.id ? 'Edit Document' : 'New Document'}</h1>
       </header>
 
       <section className="editor-shell" aria-label="Document editor">

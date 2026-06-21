@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DocumentCard from './DocumentCard';
 import { knowledgeDB } from '../db';
+import useScreenFocus from '../hooks/useScreenFocus';
 
 const PULL_TO_REFRESH_THRESHOLD = 64;
 const MAX_PULL_DISTANCE = 96;
@@ -26,6 +27,7 @@ function getDocumentTime(document) {
 }
 
 function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
+  const headingRef = useScreenFocus();
   const [activeFilter, setActiveFilter] = useState('All');
   const [documents, setDocuments] = useState([]);
   const [documentStatus, setDocumentStatus] = useState('loading');
@@ -158,7 +160,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
           <p className="home-kicker">Noted</p>
-          <h1 id="home-title">Knowledge Storage</h1>
+          <h1 id="home-title" ref={headingRef} tabIndex="-1">Knowledge Storage</h1>
           <p className="home-subtitle">Capture, sort, and reopen your notes.</p>
         </div>
 
@@ -185,6 +187,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
               <button
                 className="quick-action"
                 type="button"
+                aria-label={action.id === 'new' ? 'Create new document' : action.label}
                 onClick={() => {
                   if (action.id === 'new') {
                     onNewDocument();
@@ -209,7 +212,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
             <button className="text-button" type="button" onClick={() => loadDocuments()}>
               Refresh
             </button>
-            <button className="text-button" type="button" onClick={() => setActiveFilter('All')}>View all</button>
+            <button className="text-button" type="button" onClick={() => setActiveFilter('All')}>View all documents</button>
           </div>
         </div>
 
@@ -268,7 +271,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
         <div className="area-list">
           {pinnedAreas.map((area) => (
-            <button className="area-row" type="button" key={area.id}>
+            <button className="area-row" type="button" key={area.id} aria-label={`${area.label}, ${area.count} documents`}>
               <span>{area.label}</span>
               <span>{area.count}</span>
             </button>

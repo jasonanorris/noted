@@ -105,7 +105,7 @@ test.describe('responsive MVP screens', () => {
         '[aria-labelledby="documents-title"]',
       ]);
 
-      await page.getByRole('button', { name: 'New' }).click();
+      await page.getByRole('button', { name: 'Create new document' }).click();
       await expect(page.getByRole('heading', { name: 'New Document' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByPlaceholder('Start writing...')).toBeVisible();

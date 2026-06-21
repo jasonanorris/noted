@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import DocumentCard from './DocumentCard';
 import { knowledgeDB } from '../db';
 import { stripFormatting } from '../textFormatting';
+import useScreenFocus from '../hooks/useScreenFocus';
 
 const ALL_CATEGORIES = 'all-categories';
 const ALL_TAGS = 'all-tags';
@@ -52,6 +53,7 @@ function highlightText(value, query) {
 }
 
 function SearchScreen({ onBack, onOpenDocument }) {
+  const headingRef = useScreenFocus();
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
   const [tagFilter, setTagFilter] = useState(ALL_TAGS);
@@ -122,7 +124,7 @@ function SearchScreen({ onBack, onOpenDocument }) {
         <button className="text-button" type="button" onClick={onBack}>
           Back
         </button>
-        <h1>Search</h1>
+        <h1 ref={headingRef} tabIndex="-1">Search</h1>
       </header>
 
       <section className="search-shell" aria-label="Search documents">
@@ -173,6 +175,7 @@ function SearchScreen({ onBack, onOpenDocument }) {
               <button
                 className="text-button"
                 type="button"
+                aria-label="Clear search and filters"
                 onClick={() => {
                   setQuery('');
                   setCategoryFilter(ALL_CATEGORIES);

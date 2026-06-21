@@ -1,0 +1,70 @@
+const { test, expect } = require('@playwright/test');
+
+async function expectFocusedHeading(page, name) {
+  const heading = page.getByRole('heading', { name });
+
+  await expect(heading).toBeFocused();
+}
+
+async function expectVisibleFocus(page) {
+  const outline = await page.evaluate(() => {
+    const element = document.activeElement;
+    const styles = window.getComputedStyle(element);
+
+    return {
+      outlineColor: styles.outlineColor,
+      outlineStyle: styles.outlineStyle,
+      outlineWidth: styles.outlineWidth,
+    };
+  });
+
+  expect(outline.outlineStyle).not.toBe('none');
+  expect(outline.outlineWidth).not.toBe('0px');
+}
+
+test.describe('screen accessibility', () => {
+  test('supports keyboard navigation and labeled editor fields', async ({ page }) => {
+    await page.goto('http://localhost:3000');
+
+    await expectFocusedHeading(page, 'Knowledge Storage');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Open settings' })).toBeFocused();
+    await expectVisibleFocus(page);
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Create new document' })).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expectFocusedHeading(page, 'New Document');
+    await expect(page.getByLabel('Title')).toBeVisible();
+    await expect(page.getByLabel('Category')).toBeVisible();
+    await expect(page.getByLabel('Tags')).toBeVisible();
+    await expect(page.getByLabel('Content')).toBeVisible();
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Title')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.getByRole('button', { name: 'Back' })).toBeFocused();
+  });
+
+  test('focuses secondary screens and exposes labeled controls', async ({ page }) => {
+    await page.goto('http://localhost:3000');
+
+    await page.getByRole('button', { name: 'Search' }).click();
+    await expectFocusedHeading(page, 'Search');
+    await expect(page.getByRole('textbox', { name: 'Search documents' })).toBeVisible();
+    await expect(page.locator('.search-filter-grid').getByLabel('Category')).toBeVisible();
+    await expect(page.locator('.search-filter-grid').getByLabel('Tag')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Import' }).click();
+    await expectFocusedHeading(page, 'Import');
+    await expect(page.getByLabel('Choose JSON File')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expectFocusedHeading(page, 'Settings');
+    await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Clear Local Data' })).toBeVisible();
+  });
+});

@@ -87,6 +87,10 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [activeView]);
 
+  useEffect(() => {
+    document.title = `Noted - ${viewTitles[activeView]}`;
+  }, [activeView]);
+
   const currentView = useMemo(() => {
     if (activeView === 'home') {
       return (

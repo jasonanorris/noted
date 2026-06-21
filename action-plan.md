@@ -53,7 +53,7 @@
 - [✓] Create MVP search interface with query input and result states
 - [✓] Add search filters and highlighted matches
 - [✓] Create settings panel for app configuration
-- [ ] Add screen-level accessibility checks for keyboard navigation, focus states, and labels
+- [✓] Add screen-level accessibility checks for keyboard navigation, focus states, and labels
 
 ## Phase 3: Advanced Features (Weeks 5-6)
 
@@ -136,8 +136,8 @@
 
 ## Next Steps
 
-1. Add screen-level accessibility checks for keyboard navigation, focus states, and labels
-2. Add screen-level regression tests for home, editor, search, and settings workflows
-3. Implement tag and category management for document organization
-4. Add document preview mode
-5. Test offline functionality thoroughly before final MVP polish
+1. Add screen-level regression tests for home, editor, search, and settings workflows
+2. Implement tag and category management for document organization
+3. Add document preview mode
+4. Test offline functionality thoroughly before final MVP polish
+5. Refine and document the consistent design system

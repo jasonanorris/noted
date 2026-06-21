@@ -75,6 +75,15 @@ body {
   font-size: var(--font-size-md);
 }
 
+:focus-visible {
+  outline: 3px solid rgba(26, 117, 175, 0.38);
+  outline-offset: 3px;
+}
+
+h1:focus-visible {
+  outline-offset: 6px;
+}
+
 /* Grid system */
 .grid {
   display: grid;
@@ -852,7 +861,6 @@ html {
 }
 
 .input:focus {
-  outline: none;
   border-color: var(--color-primary);
 }
 
