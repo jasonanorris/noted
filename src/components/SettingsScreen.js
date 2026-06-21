@@ -7,6 +7,9 @@ import {
 } from '../performanceMonitoring';
 import useScreenFocus from '../hooks/useScreenFocus';
 
+const STORAGE_ESTIMATE_CACHE_KEY = 'noted:storage-estimate';
+const STORAGE_ESTIMATE_TIMEOUT = 2000;
+
 function downloadJson(data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -36,6 +39,72 @@ function formatStorageSize(bytes) {
   return `${value.toFixed(precision)} ${units[unitIndex]}`;
 }
 
+function readCachedStorageEstimate() {
+  try {
+    const cachedEstimate = JSON.parse(window.localStorage.getItem(STORAGE_ESTIMATE_CACHE_KEY) || 'null');
+
+    if (!cachedEstimate || !Number.isFinite(cachedEstimate.usage) || !Number.isFinite(cachedEstimate.quota)) {
+      return null;
+    }
+
+    return cachedEstimate;
+  } catch (error) {
+    return null;
+  }
+}
+
+function cacheStorageEstimate(estimate) {
+  if (!Number.isFinite(estimate?.usage) || !Number.isFinite(estimate?.quota)) return;
+
+  try {
+    window.localStorage.setItem(STORAGE_ESTIMATE_CACHE_KEY, JSON.stringify({
+      usage: estimate.usage,
+      quota: estimate.quota,
+      capturedAt: Date.now(),
+    }));
+  } catch (error) {
+    // Storage estimates are useful but not critical.
+  }
+}
+
+function createInitialStorageEstimate() {
+  const cachedEstimate = readCachedStorageEstimate();
+
+  if (!cachedEstimate) {
+    return {
+      status: 'loading',
+      usage: null,
+      quota: null,
+      message: '',
+    };
+  }
+
+  return {
+    status: 'ready',
+    usage: cachedEstimate.usage,
+    quota: cachedEstimate.quota,
+    message: 'Showing the latest saved storage estimate.',
+  };
+}
+
+function estimateStorageWithTimeout() {
+  return new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error('Storage estimate timed out.'));
+    }, STORAGE_ESTIMATE_TIMEOUT);
+
+    navigator.storage.estimate()
+      .then((estimate) => {
+        window.clearTimeout(timeoutId);
+        resolve(estimate);
+      })
+      .catch((error) => {
+        window.clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
+
 function SettingsScreen({ onBack }) {
   const headingRef = useScreenFocus();
   const [summary, setSummary] = useState({ documents: 0, categories: 0, tags: 0 });
@@ -45,12 +114,7 @@ function SettingsScreen({ onBack }) {
   const [message, setMessage] = useState('');
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
   const [performanceMetrics, setPerformanceMetrics] = useState(() => summarizePerformanceMetrics());
-  const [storageEstimate, setStorageEstimate] = useState({
-    status: 'loading',
-    usage: null,
-    quota: null,
-    message: '',
-  });
+  const [storageEstimate, setStorageEstimate] = useState(createInitialStorageEstimate);
 
   const loadSummary = async ({ mounted = true } = {}) => {
     try {
@@ -108,18 +172,28 @@ function SettingsScreen({ onBack }) {
     async function loadStorageEstimate() {
       if (!navigator.storage?.estimate) {
         if (isMounted) {
-          setStorageEstimate({
-            status: 'unavailable',
-            usage: null,
-            quota: null,
-            message: 'Storage estimates are not available in this browser.',
+          setStorageEstimate((currentEstimate) => {
+            if (currentEstimate.status === 'ready') {
+              return {
+                ...currentEstimate,
+                message: 'Showing the latest saved estimate because fresh storage estimates are not available in this browser.',
+              };
+            }
+
+            return {
+              status: 'unavailable',
+              usage: null,
+              quota: null,
+              message: 'Storage estimates are not available in this browser.',
+            };
           });
         }
         return;
       }
 
       try {
-        const estimate = await navigator.storage.estimate();
+        const estimate = await estimateStorageWithTimeout();
+        cacheStorageEstimate(estimate);
 
         if (isMounted) {
           setStorageEstimate({
@@ -131,11 +205,20 @@ function SettingsScreen({ onBack }) {
         }
       } catch (error) {
         if (isMounted) {
-          setStorageEstimate({
-            status: 'unavailable',
-            usage: null,
-            quota: null,
-            message: 'Storage usage could not be estimated.',
+          setStorageEstimate((currentEstimate) => {
+            if (currentEstimate.status === 'ready') {
+              return {
+                ...currentEstimate,
+                message: 'Showing the latest saved estimate because storage usage could not be refreshed.',
+              };
+            }
+
+            return {
+              status: 'unavailable',
+              usage: null,
+              quota: null,
+              message: 'Storage usage could not be estimated.',
+            };
           });
         }
       }
@@ -278,15 +361,20 @@ function SettingsScreen({ onBack }) {
             </div>
           )}
           {storageEstimate.status === 'ready' && (
-            <div className="management-row">
-              <span>
-                <strong>{formatStorageSize(storageEstimate.usage)} used</strong>
-                <small>{formatStorageSize(storageEstimate.quota)} available to this browser profile</small>
-              </span>
-              {Number.isFinite(storageEstimate.usage) && Number.isFinite(storageEstimate.quota) && storageEstimate.quota > 0 && (
-                <span>{Math.round((storageEstimate.usage / storageEstimate.quota) * 100)}%</span>
+            <>
+              <div className="management-row">
+                <span>
+                  <strong>{formatStorageSize(storageEstimate.usage)} used</strong>
+                  <small>{formatStorageSize(storageEstimate.quota)} available to this browser profile</small>
+                </span>
+                {Number.isFinite(storageEstimate.usage) && Number.isFinite(storageEstimate.quota) && storageEstimate.quota > 0 && (
+                  <span>{Math.round((storageEstimate.usage / storageEstimate.quota) * 100)}%</span>
+                )}
+              </div>
+              {storageEstimate.message && (
+                <p>{storageEstimate.message}</p>
               )}
-            </div>
+            </>
           )}
           {storageEstimate.status === 'unavailable' && (
             <p>{storageEstimate.message}</p>

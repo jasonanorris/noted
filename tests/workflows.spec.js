@@ -285,6 +285,21 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByText('Storage estimates are not available in this browser.')).toBeVisible();
   });
 
+  test('keeps storage usage visible after refreshing the settings route', async ({ page }) => {
+    await mockStorageEstimate(page);
+    await page.goto('http://localhost:3000/#settings');
+
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
+    await expect(page.getByText('1.5 MB used')).toBeVisible();
+
+    await page.reload();
+
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
+    await expect(page.getByText('1.5 MB used')).toBeVisible();
+  });
+
   test('renames categories and deletes tags from settings', async ({ page }) => {
     await openApp(page);
     await clearDatabase(page);
