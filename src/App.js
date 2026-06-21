@@ -87,11 +87,7 @@ if ('serviceWorker' in navigator) {
 
     navigator.serviceWorker.register(serviceWorkerUrl).then((registration) => {
       console.log('Service worker registered:', registration);
-
-      // Check for updates
-      if (registration.updateAvailable) {
-        registration.updateAvailable();
-      }
+      registration.update();
     }).catch((error) => {
       console.error('Service worker registration failed:', error);
     });

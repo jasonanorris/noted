@@ -1,4 +1,5 @@
-const CACHE_NAME = 'knowledge-app-cache-v2';
+const CACHE_VERSION = 'v3';
+const CACHE_NAME = `knowledge-app-cache-${CACHE_VERSION}`;
 const APP_SCOPE = self.registration.scope;
 const APP_SHELL_URL = new URL('.', APP_SCOPE).toString();
 const MANIFEST_URL = new URL('manifest.json', APP_SCOPE).toString();
@@ -9,9 +10,10 @@ const PRECACHE_URLS = [APP_SHELL_URL, MANIFEST_URL];
 // - API calls: Stalegic caching with background sync
 // - Dynamic content: Network-first with cache fallback
 
-const STATIC_CACHE_NAME = 'static-assets-v2';
-const API_CACHE_NAME = 'api-cache-v1';
-const DYNAMIC_CACHE_NAME = 'dynamic-content-v1';
+const STATIC_CACHE_NAME = `static-assets-${CACHE_VERSION}`;
+const API_CACHE_NAME = `api-cache-${CACHE_VERSION}`;
+const DYNAMIC_CACHE_NAME = `dynamic-content-${CACHE_VERSION}`;
+const EXPECTED_CACHES = [CACHE_NAME, STATIC_CACHE_NAME, API_CACHE_NAME, DYNAMIC_CACHE_NAME];
 
 // Install event - set up caches and precache essential resources
 self.addEventListener('install', (event) => {
@@ -28,7 +30,24 @@ self.addEventListener('install', (event) => {
 
 // Activate event - make the service worker active and claim clients
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+
+    await Promise.all(cacheNames.map((cacheName) => {
+      const isNotedCache = cacheName.startsWith('knowledge-app-cache-') ||
+        cacheName.startsWith('static-assets-') ||
+        cacheName.startsWith('api-cache-') ||
+        cacheName.startsWith('dynamic-content-');
+
+      if (isNotedCache && !EXPECTED_CACHES.includes(cacheName)) {
+        return caches.delete(cacheName);
+      }
+
+      return Promise.resolve();
+    }));
+
+    await clients.claim();
+  })());
 });
 
 // Fetch event - handle requests with appropriate cache strategy
@@ -192,16 +211,22 @@ async function handleDynamicContent(event, request) {
   const cache = await caches.open(DYNAMIC_CACHE_NAME);
 
   try {
-    // Try network first so app updates are picked up when online.
-    const response = await fetch(request);
-    const responseClone = response.clone();
-    cache.put(request, responseClone);
+    // Try network first so normal refreshes pick up the latest app shell.
+    const response = await fetch(request, { cache: 'no-store' });
+
+    if (response.ok) {
+      cache.put(request, response.clone());
+
+      if (request.mode === 'navigate') {
+        cache.put(APP_SHELL_URL, response.clone());
+      }
+    }
 
     return response;
   } catch (error) {
     console.error('Dynamic content fetch failed:', error);
     // Return a fallback if offline
-    return cache.match(request) || caches.match(APP_SHELL_URL);
+    return cache.match(request) || cache.match(APP_SHELL_URL) || caches.match(APP_SHELL_URL);
   }
 }
 
