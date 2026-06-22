@@ -92,6 +92,9 @@
 - [✓] Add accessibility features
 - [✓] Implement proper error states and loading indicators
 - [✓] Test offline functionality thoroughly
+- [ ] Refine programmatic heading focus styles
+  - Acceptance: screen headings focused on load do not show a distracting default blue box
+  - Acceptance: keyboard focus remains clearly visible for interactive controls and intentional focus-visible states
 - [ ] Complete real-device PWA smoke test
   - Acceptance: install from GitHub Pages on a phone
   - Acceptance: create, edit, search, export, import, and reopen notes while offline
