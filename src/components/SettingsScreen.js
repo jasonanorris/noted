@@ -427,28 +427,27 @@ function SettingsScreen({ onBack, onImport }) {
           </div>
         )}
 
-        <section className="document-state" aria-labelledby="backup-guidance-title">
+        <section className="document-state backup-section" aria-labelledby="backup-guidance-title">
           <strong id="backup-guidance-title">Back Up Local Notes</strong>
           <span>
             Notes are stored in this browser on this device. Export a JSON backup before clearing data,
             switching browsers, or moving to another device.
           </span>
-        </section>
-
-        <div className="utility-actions">
-          <div className="data-actions">
-            <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
-              {isWorking ? 'Working...' : 'Export JSON'}
-            </button>
-            <button className="btn btn-secondary" type="button" onClick={onImport} disabled={isBusy}>
-              Import JSON
-            </button>
-            <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={isBusy}>
-              Clear Local Data
-            </button>
+          <div className="utility-actions">
+            <div className="data-actions">
+              <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
+                {isWorking ? 'Working...' : 'Export JSON'}
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={onImport} disabled={isBusy}>
+                Import JSON
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={isBusy}>
+                Clear Local Data
+              </button>
+            </div>
+            <p className="last-exported">Last Exported {formatExportDate(lastExportedAt)}</p>
           </div>
-          <p className="last-exported">Last Exported {formatExportDate(lastExportedAt)}</p>
-        </div>
+        </section>
 
         <div className="management-grid" aria-busy={isBusy}>
           <section aria-labelledby="category-management-title">

@@ -506,11 +506,16 @@ html {
   line-height: 1.45;
 }
 
+.backup-section {
+  align-items: stretch;
+}
+
 .utility-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-md);
+  margin-top: var(--spacing-xs);
 }
 
 .data-actions {
