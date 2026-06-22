@@ -353,10 +353,13 @@ test.describe('main workflow regressions', () => {
       settings: [],
     }));
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Import JSON' }).click();
     await page.getByLabel('Choose JSON File').setInputFiles(backupPath);
     await expect(page.getByText('Backup restored. Your documents have been refreshed.')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page.getByRole('button', { name: /Imported Workflow Note/ })).toBeVisible();
 

@@ -105,7 +105,7 @@ function estimateStorageWithTimeout() {
   });
 }
 
-function SettingsScreen({ onBack }) {
+function SettingsScreen({ onBack, onImport }) {
   const headingRef = useScreenFocus();
   const [summary, setSummary] = useState({ documents: 0, categories: 0, tags: 0 });
   const [categories, setCategories] = useState([]);
@@ -406,6 +406,9 @@ function SettingsScreen({ onBack }) {
         <div className="utility-actions">
           <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
             {isWorking ? 'Working...' : 'Export JSON'}
+          </button>
+          <button className="btn btn-secondary" type="button" onClick={onImport} disabled={isBusy}>
+            Import JSON
           </button>
           <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={isBusy}>
             Clear Local Data

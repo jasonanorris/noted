@@ -189,10 +189,10 @@ function App() {
     }
 
     if (activeView === 'import') {
-      return <ImportScreen onBack={() => navigate('home')} />;
+      return <ImportScreen onBack={() => navigate('settings')} />;
     }
 
-    return <SettingsScreen onBack={() => navigate('home')} />;
+    return <SettingsScreen onBack={() => navigate('home')} onImport={() => navigate('import')} />;
   }, [
     activeDocument,
     activeView,

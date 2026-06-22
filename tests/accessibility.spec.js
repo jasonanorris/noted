@@ -64,14 +64,14 @@ test.describe('screen accessibility', () => {
     await expect(page.locator('.search-filter-grid').getByLabel('Tag')).toBeVisible();
 
     await page.getByRole('button', { name: 'Back' }).click();
-    await page.getByRole('button', { name: 'Import' }).click();
-    await expectFocusedHeading(page, 'Import');
-    await expect(page.getByLabel('Choose JSON File')).toBeVisible();
-
-    await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await expectFocusedHeading(page, 'Settings');
     await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Import JSON' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Clear Local Data' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Import JSON' }).click();
+    await expectFocusedHeading(page, 'Import');
+    await expect(page.getByLabel('Choose JSON File')).toBeVisible();
   });
 });

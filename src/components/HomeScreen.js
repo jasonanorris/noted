@@ -8,7 +8,6 @@ const MAX_PULL_DISTANCE = 96;
 
 const quickActions = [
   { id: 'new', label: 'New', symbol: '+' },
-  { id: 'import', label: 'Import', symbol: '^' },
   { id: 'search', label: 'Search', symbol: '/' },
   { id: 'settings', label: 'Settings', symbol: '*' },
 ];

@@ -173,13 +173,16 @@ test.describe('responsive MVP screens', () => {
       await expect(page.getByRole('button', { name: new RegExp(`MVP Search Note ${viewport.name}`, 'i') })).toBeVisible();
 
       await page.getByRole('button', { name: 'Back' }).click();
-      await page.getByRole('button', { name: 'Import' }).click();
+      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+      await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
+      await page.getByRole('button', { name: 'Import JSON' }).click();
       await expect(page.getByRole('heading', { name: 'Import' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByText('Restore JSON Backup')).toBeVisible();
 
       await page.getByRole('button', { name: 'Back' }).click();
-      await page.getByRole('button', { name: 'Settings', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();

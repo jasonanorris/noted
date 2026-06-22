@@ -39,7 +39,7 @@
   - Acceptance: browser/mobile back behavior returns users to the expected previous screen
 - [✓] 2.2.6 Add pull-to-refresh functionality for recent documents
   - Acceptance: refresh gesture works on mobile and has an accessible button fallback
-- [✓] 2.2.7 Add quick actions menu behavior (create new, import, search, settings)
+- [✓] 2.2.7 Add quick actions menu behavior (create new, search, settings)
   - Acceptance: each action performs the expected navigation or opens the expected panel
   - Acceptance: unavailable actions show a clear disabled or coming-soon state
 - [✓] 2.2.8 Verify core screens on target layouts
