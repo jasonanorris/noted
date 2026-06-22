@@ -252,6 +252,8 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
     await expect(page.getByText('1.5 MB used')).toBeVisible();
     await expect(page.getByText('100 MB available to this browser profile')).toBeVisible();
+    await expect(page.getByText('Back Up Local Notes')).toBeVisible();
+    await expect(page.getByText('Notes are stored in this browser on this device.')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export JSON' }).click();

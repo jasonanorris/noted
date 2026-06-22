@@ -65,7 +65,7 @@
 - [✓] Add storage usage display in Settings
   - Acceptance: shows estimated browser storage usage/quota when available
   - Acceptance: gracefully explains when storage estimates are unavailable
-- [ ] Add backup reminder/guidance for local-first data
+- [✓] Add backup reminder/guidance for local-first data
   - Acceptance: Settings clearly tells users notes are stored on this device/browser
   - Acceptance: encourages regular JSON exports before clearing data or changing devices
 
@@ -149,7 +149,6 @@
 
 ## Next Steps
 
-1. Add backup reminder/guidance for local-first data
-2. Complete real-device PWA smoke test
-3. Define MVP done criteria
-4. Configure build optimization for production
+1. Complete real-device PWA smoke test
+2. Define MVP done criteria
+3. Configure build optimization for production

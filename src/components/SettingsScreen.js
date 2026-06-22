@@ -395,6 +395,14 @@ function SettingsScreen({ onBack }) {
           </div>
         )}
 
+        <section className="document-state" aria-labelledby="backup-guidance-title">
+          <strong id="backup-guidance-title">Back Up Local Notes</strong>
+          <span>
+            Notes are stored in this browser on this device. Export a JSON backup before clearing data,
+            switching browsers, or moving to another device.
+          </span>
+        </section>
+
         <div className="utility-actions">
           <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
             {isWorking ? 'Working...' : 'Export JSON'}
