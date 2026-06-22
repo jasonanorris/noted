@@ -98,7 +98,7 @@ test.describe('offline PWA behavior', () => {
     await expect(page.getByRole('heading', { name: 'Offline Heading' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Back' }).click();
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Open settings' }).click();
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
     await expect(page.getByText('1 documents, 1 categories, 1 tags')).toBeVisible();
   });

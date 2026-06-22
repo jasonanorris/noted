@@ -35,13 +35,13 @@
   - Acceptance: loads recent documents from local storage and refreshes after create/update/delete operations
   - Acceptance: handles database-not-ready and offline states without breaking the UI
 - [✓] 2.2.5 Add app navigation wiring for home, editor, search, import, and settings views
-  - Acceptance: quick actions route or switch to the correct view
+  - Acceptance: home actions route or switch to the correct view
   - Acceptance: browser/mobile back behavior returns users to the expected previous screen
 - [✓] 2.2.6 Add pull-to-refresh functionality for recent documents
   - Acceptance: refresh gesture works on mobile and has an accessible button fallback
-- [✓] 2.2.7 Add quick actions menu behavior (create new, search, settings)
+- [✓] 2.2.7 Add floating home actions for create new and search
   - Acceptance: each action performs the expected navigation or opens the expected panel
-  - Acceptance: unavailable actions show a clear disabled or coming-soon state
+  - Acceptance: settings remains accessible from the home header
 - [✓] 2.2.8 Verify core screens on target layouts
   - Acceptance: check 375px mobile, 768px tablet, and desktop widths for layout, text fit, and touch targets
 

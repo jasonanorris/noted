@@ -6,12 +6,6 @@ import useScreenFocus from '../hooks/useScreenFocus';
 const PULL_TO_REFRESH_THRESHOLD = 64;
 const MAX_PULL_DISTANCE = 96;
 
-const quickActions = [
-  { id: 'new', label: 'New', symbol: '+' },
-  { id: 'search', label: 'Search', symbol: '/' },
-  { id: 'settings', label: 'Settings', symbol: '*' },
-];
-
 function getDocumentTime(document) {
   const value = document.updatedAt || document.lastModified || document.createdAt || 0;
   const date = new Date(value);
@@ -187,34 +181,24 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
         </button>
       </section>
 
-      <section className="home-section" aria-labelledby="quick-actions-title">
-        <div className="home-section-header">
-          <h2 id="quick-actions-title">Quick Actions</h2>
-        </div>
-
-        <div className="quick-action-grid" role="list">
-          {quickActions.map((action) => (
-            <div className="quick-action-item" key={action.id} role="listitem">
-              <button
-                className="quick-action"
-                type="button"
-                aria-label={action.id === 'new' ? 'Create new document' : action.label}
-                onClick={() => {
-                  if (action.id === 'new') {
-                    onNewDocument();
-                    return;
-                  }
-
-                  onNavigate(action.id);
-                }}
-              >
-                <span className="quick-action-symbol" aria-hidden="true">{action.symbol}</span>
-                <span>{action.label}</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="floating-actions" aria-label="Primary actions">
+        <button
+          className="floating-action floating-action-primary"
+          type="button"
+          aria-label="Create new document"
+          onClick={onNewDocument}
+        >
+          <span aria-hidden="true">+</span>
+        </button>
+        <button
+          className="floating-action floating-action-secondary"
+          type="button"
+          aria-label="Search"
+          onClick={() => onNavigate('search')}
+        >
+          <span className="floating-search-icon" aria-hidden="true"></span>
+        </button>
+      </div>
 
       <section className="home-section" aria-labelledby="documents-title">
         <div className="home-section-header">

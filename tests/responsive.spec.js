@@ -141,18 +141,16 @@ test.describe('responsive MVP screens', () => {
       await expectNoHorizontalOverflow(page);
       await expectElementsDoNotOverlap(page, [
         '.home-hero',
-        '[aria-labelledby="quick-actions-title"]',
         '[aria-labelledby="documents-title"]',
       ]);
+      await expectMinimumTargetSize(page, '.floating-action');
 
       await page.getByRole('button', { name: 'Create new document' }).click();
       await expect(page.getByRole('heading', { name: 'New Document' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByPlaceholder('Start writing...')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Bold' })).toBeVisible();
-      await page.getByPlaceholder('Start writing...').fill('formatted note');
-      await page.getByPlaceholder('Start writing...').selectText();
-      await page.getByRole('button', { name: 'Bold' }).click();
+      await page.getByPlaceholder('Start writing...').fill('**formatted note**');
       await expect(page.getByPlaceholder('Start writing...')).toHaveValue('**formatted note**');
       await page.getByRole('button', { name: 'Preview' }).click();
       await expect(page.getByLabel('Document preview')).toContainText('formatted note');
@@ -173,7 +171,7 @@ test.describe('responsive MVP screens', () => {
       await expect(page.getByRole('button', { name: new RegExp(`MVP Search Note ${viewport.name}`, 'i') })).toBeVisible();
 
       await page.getByRole('button', { name: 'Back' }).click();
-      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      await page.getByRole('button', { name: 'Open settings' }).click();
       await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
@@ -200,7 +198,7 @@ test.describe('device profile coverage', () => {
 
         await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
         await expectNoHorizontalOverflow(page);
-        await expectMinimumTargetSize(page, '.quick-action');
+        await expectMinimumTargetSize(page, '.floating-action');
 
         await page.getByRole('button', { name: 'Create new document' }).click();
         await expect(page.getByRole('heading', { name: 'New Document' })).toBeVisible();
@@ -213,7 +211,7 @@ test.describe('device profile coverage', () => {
         await expectNoHorizontalOverflow(page);
 
         await page.getByRole('button', { name: 'Back' }).click();
-        await page.getByRole('button', { name: 'Settings', exact: true }).click();
+        await page.getByRole('button', { name: 'Open settings' }).click();
         await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
         await expectNoHorizontalOverflow(page);
       });

@@ -248,7 +248,7 @@ test.describe('main workflow regressions', () => {
     });
     await page.reload();
 
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Open settings' }).click();
     await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
     await expect(page.getByText('1.5 MB used')).toBeVisible();
     await expect(page.getByText('100 MB available to this browser profile')).toBeVisible();
@@ -284,7 +284,7 @@ test.describe('main workflow regressions', () => {
     await clearDatabase(page);
     await page.reload();
 
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Open settings' }).click();
     await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
     await expect(page.getByText('Storage estimates are not available in this browser.')).toBeVisible();
   });
@@ -318,7 +318,7 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
     await page.getByRole('button', { name: 'Back' }).click();
 
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Open settings' }).click();
     await expect(page.getByText('1 documents, 1 categories, 2 tags')).toBeVisible();
 
     const projectRow = page.locator('.management-row').filter({ hasText: 'Projects' });
@@ -355,7 +355,7 @@ test.describe('main workflow regressions', () => {
       settings: [],
     }));
 
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Open settings' }).click();
     await page.getByRole('button', { name: 'Import JSON' }).click();
     await page.getByLabel('Choose JSON File').setInputFiles(backupPath);
     await expect(page.getByText('Backup restored. Your documents have been refreshed.')).toBeVisible();
