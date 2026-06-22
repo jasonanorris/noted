@@ -4,6 +4,7 @@ const DB_VERSION = 4;
 
 const REQUIRED_STORES = ['documents', 'categories', 'tags', 'settings'];
 const BACKUP_STORES = ['documents', 'categories', 'tags', 'settings'];
+const DEFAULT_CATEGORY_NAMES = ['People', 'Places', 'Things', 'Projects', 'Media'];
 
 function createIndex(store, indexName, keyPath = indexName) {
   if (!store.indexNames.contains(indexName)) {
@@ -104,6 +105,17 @@ function sortByName(first, second) {
   return first.name.localeCompare(second.name);
 }
 
+function createDefaultCategory(name, timestamp) {
+  return {
+    id: createTaxonomyId(name),
+    name,
+    count: 0,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    isDefault: true,
+  };
+}
+
 export class KnowledgeDB {
   constructor() {
     this.db = null;
@@ -143,7 +155,13 @@ export class KnowledgeDB {
 
         this.db = db;
         this.isReady = true;
-        resolve();
+
+        try {
+          await this.ensureDefaultCategories();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
       };
 
       request.onerror = (error) => {
@@ -373,6 +391,33 @@ export class KnowledgeDB {
     });
   }
 
+  async ensureDefaultCategories() {
+    await this._ensureReady();
+
+    const timestamp = Date.now();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['categories'], 'readwrite');
+      const store = transaction.objectStore('categories');
+
+      DEFAULT_CATEGORY_NAMES.forEach((categoryName) => {
+        const id = createTaxonomyId(categoryName);
+        const request = store.get(id);
+
+        request.onsuccess = () => {
+          if (request.result) return;
+
+          store.put(createDefaultCategory(categoryName, timestamp));
+        };
+
+        request.onerror = () => reject(request.error);
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Default categories could not be created.'));
+    });
+  }
+
   // Tags operations
   async createTag(tag) {
     await this._ensureReady();
@@ -449,6 +494,11 @@ export class KnowledgeDB {
     const categoryMap = new Map();
     const tagMap = new Map();
     const timestamp = Date.now();
+
+    DEFAULT_CATEGORY_NAMES.forEach((categoryName) => {
+      const category = createDefaultCategory(categoryName, timestamp);
+      categoryMap.set(category.id, category);
+    });
 
     documents.forEach((document) => {
       const categoryName = (document.categoryName || document.category || 'Unfiled').trim() || 'Unfiled';
@@ -745,8 +795,12 @@ export class KnowledgeDB {
       const transaction = this.db.transaction(BACKUP_STORES, 'readwrite');
 
       transaction.oncomplete = () => {
-        notifyDocumentsChanged();
-        resolve();
+        this.ensureDefaultCategories()
+          .then(() => {
+            notifyDocumentsChanged();
+            resolve();
+          })
+          .catch(reject);
       };
       transaction.onerror = () => reject(transaction.error || new Error('Local data could not be cleared.'));
 

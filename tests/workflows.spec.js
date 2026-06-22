@@ -270,6 +270,13 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Clear Local Data' }).click();
     await expect(page.getByText('Local data cleared.')).toBeVisible();
     expect(await readStore(page, 'documents')).toHaveLength(0);
+    await expect.poll(async () => (await readStore(page, 'categories')).map((category) => category.name).sort()).toEqual([
+      'Media',
+      'People',
+      'Places',
+      'Projects',
+      'Things',
+    ]);
   });
 
   test('explains when browser storage estimates are unavailable', async ({ page }) => {
@@ -319,7 +326,12 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Back' }).click();
 
     await page.getByRole('button', { name: 'Open settings' }).click();
-    await expect(page.getByText('1 documents, 1 categories, 2 tags')).toBeVisible();
+    await expect(page.getByText('1 documents, 5 categories, 2 tags')).toBeVisible();
+    await expect(page.locator('.management-list').first()).toContainText('People');
+    await expect(page.locator('.management-list').first()).toContainText('Places');
+    await expect(page.locator('.management-list').first()).toContainText('Things');
+    await expect(page.locator('.management-list').first()).toContainText('Projects');
+    await expect(page.locator('.management-list').first()).toContainText('Media');
 
     const projectRow = page.locator('.management-row').filter({ hasText: 'Projects' });
     page.once('dialog', (dialog) => dialog.accept('Renamed Projects'));

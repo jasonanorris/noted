@@ -104,6 +104,10 @@ body {
   outline-offset: 3px;
 }
 
+[tabindex="-1"]:focus {
+  outline: 0;
+}
+
 h1:focus-visible {
   outline-offset: 6px;
 }

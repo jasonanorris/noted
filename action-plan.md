@@ -68,7 +68,7 @@
 - [✓] Add backup reminder/guidance for local-first data
   - Acceptance: Settings clearly tells users notes are stored on this device/browser
   - Acceptance: encourages regular JSON exports before clearing data or changing devices
-- [ ] Create default categories: People, Places, Things, Projects, Media
+- [✓] Create default categories: People, Places, Things, Projects, Media
   - Acceptance: new installs start with the default category set
   - Acceptance: existing users receive missing defaults without duplicating or overwriting custom categories
 
@@ -92,7 +92,7 @@
 - [✓] Add accessibility features
 - [✓] Implement proper error states and loading indicators
 - [✓] Test offline functionality thoroughly
-- [ ] Refine programmatic heading focus styles
+- [✓] Refine programmatic heading focus styles
   - Acceptance: screen headings focused on load do not show a distracting default blue box
   - Acceptance: keyboard focus remains clearly visible for interactive controls and intentional focus-visible states
 - [ ] Complete real-device PWA smoke test
@@ -157,5 +157,4 @@
 
 1. Complete real-device PWA smoke test
 2. Define MVP done criteria
-3. Create default categories: People, Places, Things, Projects, Media
-4. Configure build optimization for production
+3. Configure build optimization for production

@@ -22,11 +22,26 @@ async function expectVisibleFocus(page) {
   expect(outline.outlineWidth).not.toBe('0px');
 }
 
+async function expectNoProgrammaticFocusOutline(page) {
+  const outline = await page.evaluate(() => {
+    const element = document.activeElement;
+    const styles = window.getComputedStyle(element);
+
+    return {
+      outlineStyle: styles.outlineStyle,
+      outlineWidth: styles.outlineWidth,
+    };
+  });
+
+  expect(outline.outlineStyle).toBe('none');
+}
+
 test.describe('screen accessibility', () => {
   test('supports keyboard navigation and labeled editor fields', async ({ page }) => {
     await page.goto('http://localhost:3000');
 
     await expectFocusedHeading(page, 'Knowledge Storage');
+    await expectNoProgrammaticFocusOutline(page);
     await page.getByRole('link', { name: 'Skip to content' }).focus();
     await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
     await page.keyboard.press('Enter');
