@@ -127,7 +127,7 @@ test.describe('main workflow regressions', () => {
 
     await page.getByRole('button', { name: 'Create new document' }).click();
     await page.getByLabel('Title').fill('Workflow Draft');
-    await page.getByLabel('Category').fill('Projects');
+    await page.getByRole('button', { name: 'Projects' }).click();
     await page.getByLabel('Tags').fill('workflow, draft');
     await page.getByLabel('Content').fill('shortcut body');
     await page.getByLabel('Content').focus();
@@ -195,6 +195,29 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: /Older Home Note/ }).click();
     await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
     await expect(page.getByLabel('Title')).toHaveValue('Older Home Note');
+  });
+
+  test('selects existing categories and supports custom category entry', async ({ page }) => {
+    await openApp(page);
+    await clearDatabase(page);
+    await page.reload();
+
+    await page.getByRole('button', { name: 'Create new document' }).click();
+    await expect(page.getByRole('button', { name: 'Media' })).toBeVisible();
+    await expect(page.getByLabel('Category')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Media' }).click();
+    await expect(page.getByRole('button', { name: 'Media' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByLabel('Category')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Media' }).click();
+    await expect(page.getByLabel('Category')).toBeVisible();
+    await page.getByLabel('Category').fill('Ideas');
+    await page.getByLabel('Title').fill('Custom Category Note');
+    await page.getByLabel('Content').fill('A note for a custom category.');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    await expect.poll(async () => (await readStore(page, 'categories')).map((category) => category.name)).toContain('Ideas');
   });
 
   test('filters search results and opens a matching document', async ({ page }) => {
@@ -356,7 +379,7 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page.getByRole('button', { name: 'Renamed Projects, 1 documents' })).toBeVisible();
     await page.getByRole('button', { name: /Managed Taxonomy Note/ }).click();
-    await expect(page.getByLabel('Category')).toHaveValue('Renamed Projects');
+    await expect(page.getByRole('button', { name: 'Renamed Projects' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByLabel('Tags')).toHaveValue('workflow');
   });
 

@@ -351,6 +351,38 @@ html {
   line-height: 1.2;
 }
 
+.category-choice-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.category-choice {
+  min-height: 44px;
+  border: var(--border-control);
+  border-radius: 999px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.category-choice.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.category-custom-field {
+  display: block;
+}
+
+.category-custom-field .input {
+  width: 100%;
+}
+
 .editor-content-field {
   min-height: 280px;
 }

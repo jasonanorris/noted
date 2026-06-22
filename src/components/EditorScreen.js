@@ -97,6 +97,7 @@ function EditorScreen({ document, onBack, onSaved }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [tagText, setTagText] = useState('');
   const [editorMode, setEditorMode] = useState('edit');
   const [status, setStatus] = useState('idle');
@@ -131,11 +132,39 @@ function EditorScreen({ document, onBack, onSaved }) {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCategories() {
+      try {
+        const storedCategories = await knowledgeDB.getAllCategories();
+        if (isMounted) {
+          setCategoryOptions([...storedCategories].sort((first, second) => first.name.localeCompare(second.name)));
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setCategoryOptions([]);
+        }
+      }
+    }
+
+    loadCategories();
+
+    const handleDocumentsChanged = () => loadCategories();
+    window.addEventListener('documents:changed', handleDocumentsChanged);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('documents:changed', handleDocumentsChanged);
+    };
+  }, []);
+
   const canSave = useMemo(() => {
     return title.trim().length > 0 || content.trim().length > 0;
   }, [content, title]);
 
   const previewBlocks = useMemo(() => renderPreviewBlocks(content), [content]);
+  const selectedExistingCategory = categoryOptions.some((option) => option.name === category.trim());
 
   const saveDocument = useCallback(async ({ auto = false } = {}) => {
     if (!canSave) {
@@ -212,6 +241,11 @@ function EditorScreen({ document, onBack, onSaved }) {
       setStatus('idle');
     }
     setter(value);
+  };
+
+  const selectCategory = (categoryName) => {
+    const nextCategory = category.trim() === categoryName ? '' : categoryName;
+    markEdited(setCategory)(nextCategory);
   };
 
   const refreshHistoryState = () => {
@@ -400,15 +434,35 @@ function EditorScreen({ document, onBack, onSaved }) {
           />
         </label>
 
-        <label className="field">
-          <span>Category</span>
-          <input
-            className="input"
-            value={category}
-            onChange={(event) => markEdited(setCategory)(event.target.value)}
-            placeholder="Unfiled"
-          />
-        </label>
+        <div className="field">
+          <span id="editor-category-label">Category</span>
+          {categoryOptions.length > 0 && (
+            <div className="category-choice-list" aria-label="Existing categories">
+              {categoryOptions.map((option) => (
+                <button
+                  className={`category-choice ${category.trim() === option.name ? 'is-active' : ''}`}
+                  type="button"
+                  key={option.id}
+                  onClick={() => selectCategory(option.name)}
+                  aria-pressed={category.trim() === option.name}
+                >
+                  {option.name}
+                </button>
+              ))}
+            </div>
+          )}
+          {!selectedExistingCategory && (
+            <label className="category-custom-field">
+              <span className="sr-only">Category</span>
+              <input
+                className="input"
+                value={category}
+                onChange={(event) => markEdited(setCategory)(event.target.value)}
+                placeholder="New category"
+              />
+            </label>
+          )}
+        </div>
 
         <label className="field">
           <span>Tags</span>
