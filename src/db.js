@@ -326,16 +326,41 @@ export class KnowledgeDB {
   async createCategory(category) {
     await this._ensureReady();
 
+    const timestamp = Date.now();
+    const categoryName = typeof category === 'string' ? category : category?.name;
+    const trimmedName = String(categoryName || '').trim();
+    if (!trimmedName) throw new Error('Category name is required.');
+
+    const nextCategory = {
+      ...(typeof category === 'object' && category ? category : {}),
+      id: createTaxonomyId(trimmedName),
+      name: trimmedName,
+      count: 0,
+      createdAt: category?.createdAt || timestamp,
+      updatedAt: timestamp,
+      isCustom: true,
+    };
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['categories'], 'readwrite');
       const store = transaction.objectStore('categories');
 
-      category.createdAt = Date.now();
+      const request = store.get(nextCategory.id);
 
-      const request = store.add(category);
+      request.onsuccess = () => {
+        if (request.result) {
+          reject(new Error('Category already exists.'));
+          return;
+        }
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = (error) => reject(error);
+        const addRequest = store.add(nextCategory);
+        addRequest.onsuccess = () => {
+          notifyDocumentsChanged();
+          resolve(nextCategory);
+        };
+        addRequest.onerror = () => reject(addRequest.error);
+      };
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -490,14 +515,29 @@ export class KnowledgeDB {
   async rebuildTaxonomy() {
     await this._ensureReady();
 
-    const documents = await this.getAllDocuments();
+    const [documents, existingCategories] = await Promise.all([
+      this.getAllDocuments(),
+      this.getAllCategories(),
+    ]);
     const categoryMap = new Map();
     const tagMap = new Map();
     const timestamp = Date.now();
 
+    existingCategories
+      .filter((category) => category?.isCustom)
+      .forEach((category) => {
+        categoryMap.set(category.id, {
+          ...category,
+          count: 0,
+          updatedAt: category.updatedAt || timestamp,
+        });
+      });
+
     DEFAULT_CATEGORY_NAMES.forEach((categoryName) => {
       const category = createDefaultCategory(categoryName, timestamp);
-      categoryMap.set(category.id, category);
+      if (!categoryMap.has(category.id)) {
+        categoryMap.set(category.id, category);
+      }
     });
 
     documents.forEach((document) => {

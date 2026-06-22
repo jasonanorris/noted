@@ -141,6 +141,8 @@ function SettingsScreen({ onBack, onImport }) {
   const [tags, setTags] = useState([]);
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
   const [performanceMetrics, setPerformanceMetrics] = useState(() => summarizePerformanceMetrics());
   const [storageEstimate, setStorageEstimate] = useState(createInitialStorageEstimate);
@@ -285,14 +287,43 @@ function SettingsScreen({ onBack, onImport }) {
       setStatus('working');
       setMessage('Clearing local data...');
       await knowledgeDB.clearAllData();
-      setSummary({ documents: 0, categories: 0, tags: 0 });
-      setCategories([]);
-      setTags([]);
+      await loadSummary();
       setStatus('success');
       setMessage('Local data cleared.');
     } catch (error) {
       setStatus('error');
       setMessage(error?.message || 'Local data could not be cleared.');
+    }
+  };
+
+  const startAddingCategory = () => {
+    setNewCategoryName('');
+    setIsAddingCategory(true);
+  };
+
+  const cancelAddingCategory = () => {
+    setNewCategoryName('');
+    setIsAddingCategory(false);
+  };
+
+  const addCategory = async (event) => {
+    event.preventDefault();
+
+    const trimmedName = newCategoryName.trim();
+    if (!trimmedName) return;
+
+    try {
+      setStatus('working');
+      setMessage('Adding category...');
+      await knowledgeDB.createCategory(trimmedName);
+      await loadSummary();
+      setNewCategoryName('');
+      setIsAddingCategory(false);
+      setStatus('success');
+      setMessage('Category added.');
+    } catch (error) {
+      setStatus('error');
+      setMessage(error?.message || 'Category could not be added.');
     }
   };
 
@@ -451,7 +482,39 @@ function SettingsScreen({ onBack, onImport }) {
 
         <div className="management-grid" aria-busy={isBusy}>
           <section aria-labelledby="category-management-title">
-            <h2 id="category-management-title">Categories</h2>
+            <div className="management-section-header">
+              <h2 id="category-management-title">Categories</h2>
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Add category"
+                onClick={startAddingCategory}
+                disabled={isBusy || isAddingCategory}
+              >
+                +
+              </button>
+            </div>
+            {isAddingCategory && (
+              <form className="management-add-form" onSubmit={addCategory}>
+                <label className="sr-only" htmlFor="new-category-name">Category name</label>
+                <input
+                  id="new-category-name"
+                  className="input"
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(event) => setNewCategoryName(event.target.value)}
+                  placeholder="Category name"
+                  autoFocus
+                  disabled={isBusy}
+                />
+                <button className="btn btn-primary" type="submit" disabled={isBusy || !newCategoryName.trim()}>
+                  Add
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={cancelAddingCategory} disabled={isBusy}>
+                  Cancel
+                </button>
+              </form>
+            )}
             <div className="management-list">
               {categories.length ? categories.map((category) => (
                 <div className="management-row" key={category.id}>
