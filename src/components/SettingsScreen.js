@@ -8,6 +8,7 @@ import {
 import useScreenFocus from '../hooks/useScreenFocus';
 
 const STORAGE_ESTIMATE_CACHE_KEY = 'noted:storage-estimate';
+const LAST_EXPORT_CACHE_KEY = 'noted:last-exported-at';
 const STORAGE_ESTIMATE_TIMEOUT = 2000;
 
 function downloadJson(data) {
@@ -67,6 +68,34 @@ function cacheStorageEstimate(estimate) {
   }
 }
 
+function readLastExportedAt() {
+  try {
+    return window.localStorage.getItem(LAST_EXPORT_CACHE_KEY) || '';
+  } catch (error) {
+    return '';
+  }
+}
+
+function cacheLastExportedAt(exportedAt) {
+  try {
+    window.localStorage.setItem(LAST_EXPORT_CACHE_KEY, exportedAt);
+  } catch (error) {
+    // Last export metadata should never block backup creation.
+  }
+}
+
+function formatExportDate(value) {
+  if (!value) return 'Never';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
+}
+
 function createInitialStorageEstimate() {
   const cachedEstimate = readCachedStorageEstimate();
 
@@ -115,6 +144,7 @@ function SettingsScreen({ onBack, onImport }) {
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
   const [performanceMetrics, setPerformanceMetrics] = useState(() => summarizePerformanceMetrics());
   const [storageEstimate, setStorageEstimate] = useState(createInitialStorageEstimate);
+  const [lastExportedAt, setLastExportedAt] = useState(readLastExportedAt);
 
   const loadSummary = async ({ mounted = true } = {}) => {
     try {
@@ -237,6 +267,8 @@ function SettingsScreen({ onBack, onImport }) {
       setMessage('Preparing backup...');
       const backupData = await knowledgeDB.exportData();
       downloadJson(backupData);
+      cacheLastExportedAt(backupData.exportedAt);
+      setLastExportedAt(backupData.exportedAt);
       setStatus('success');
       setMessage('Backup downloaded.');
     } catch (error) {
@@ -404,15 +436,18 @@ function SettingsScreen({ onBack, onImport }) {
         </section>
 
         <div className="utility-actions">
-          <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
-            {isWorking ? 'Working...' : 'Export JSON'}
-          </button>
-          <button className="btn btn-secondary" type="button" onClick={onImport} disabled={isBusy}>
-            Import JSON
-          </button>
-          <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={isBusy}>
-            Clear Local Data
-          </button>
+          <div className="data-actions">
+            <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
+              {isWorking ? 'Working...' : 'Export JSON'}
+            </button>
+            <button className="btn btn-secondary" type="button" onClick={onImport} disabled={isBusy}>
+              Import JSON
+            </button>
+            <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={isBusy}>
+              Clear Local Data
+            </button>
+          </div>
+          <p className="last-exported">Last Exported {formatExportDate(lastExportedAt)}</p>
         </div>
 
         <div className="management-grid" aria-busy={isBusy}>

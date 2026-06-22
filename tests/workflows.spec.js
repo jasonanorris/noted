@@ -254,6 +254,7 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByText('100 MB available to this browser profile')).toBeVisible();
     await expect(page.getByText('Back Up Local Notes')).toBeVisible();
     await expect(page.getByText('Notes are stored in this browser on this device.')).toBeVisible();
+    await expect(page.getByText('Last Exported Never')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export JSON' }).click();
@@ -263,6 +264,7 @@ test.describe('main workflow regressions', () => {
     expect(backup.documents).toHaveLength(1);
     expect(backup.documents[0].title).toBe('Exported Note');
     await expect(page.getByText('Backup downloaded.')).toBeVisible();
+    await expect(page.getByText(/^Last Exported (?!Never)/)).toBeVisible();
 
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Clear Local Data' }).click();
