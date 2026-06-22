@@ -68,6 +68,9 @@
 - [✓] Add backup reminder/guidance for local-first data
   - Acceptance: Settings clearly tells users notes are stored on this device/browser
   - Acceptance: encourages regular JSON exports before clearing data or changing devices
+- [ ] Create default categories: People, Places, Things, Projects, Media
+  - Acceptance: new installs start with the default category set
+  - Acceptance: existing users receive missing defaults without duplicating or overwriting custom categories
 
 ### 3.2 User Experience Enhancements
 - [✓] Add keyboard shortcuts
@@ -151,4 +154,5 @@
 
 1. Complete real-device PWA smoke test
 2. Define MVP done criteria
-3. Configure build optimization for production
+3. Create default categories: People, Places, Things, Projects, Media
+4. Configure build optimization for production
