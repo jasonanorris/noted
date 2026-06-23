@@ -72,7 +72,7 @@ test.describe('offline PWA behavior', () => {
 
   test('loads cached app shell and local documents while offline', async ({ page, context }) => {
     await page.goto('http://localhost:3000/noted/');
-    await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
     await seedOfflineData(page);
     await waitForServiceWorker(page);
 
@@ -82,7 +82,7 @@ test.describe('offline PWA behavior', () => {
     await context.setOffline(true);
     await page.reload();
 
-    await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Offline Field Note/ })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Field Work, 1 documents' })).toBeVisible();
 

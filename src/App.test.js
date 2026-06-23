@@ -3,7 +3,7 @@ import App from './App';
 
 test('renders home screen', () => {
   render(<App />);
-  expect(screen.getByRole('heading', { name: /knowledge storage/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /noted/i })).toBeInTheDocument();
 });
 
 test('routes quick actions to app views', async () => {

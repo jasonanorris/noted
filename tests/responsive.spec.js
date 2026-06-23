@@ -137,7 +137,7 @@ test.describe('responsive MVP screens', () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('http://localhost:3000');
 
-      await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expectElementsDoNotOverlap(page, [
         '.home-hero',
@@ -196,7 +196,7 @@ test.describe('device profile coverage', () => {
       test('supports core navigation and touch targets', async ({ page }) => {
         await page.goto('http://localhost:3000');
 
-        await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
         await expectNoHorizontalOverflow(page);
         await expectMinimumTargetSize(page, '.floating-action');
 

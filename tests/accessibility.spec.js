@@ -40,7 +40,7 @@ test.describe('screen accessibility', () => {
   test('supports keyboard navigation and labeled editor fields', async ({ page }) => {
     await page.goto('http://localhost:3000');
 
-    await expectFocusedHeading(page, 'Knowledge Storage');
+    await expectFocusedHeading(page, 'Noted');
     await expectNoProgrammaticFocusOutline(page);
     await page.getByRole('link', { name: 'Skip to content' }).focus();
     await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();

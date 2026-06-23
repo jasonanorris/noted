@@ -7,7 +7,7 @@ const stores = ['documents', 'categories', 'tags', 'settings'];
 
 async function openApp(page) {
   await page.goto('http://localhost:3000');
-  await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
 }
 
 async function clearDatabase(page) {
@@ -168,7 +168,7 @@ test.describe('main workflow regressions', () => {
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Delete' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Knowledge Storage' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Workflow Draft Edited/ })).toHaveCount(0);
   });
 

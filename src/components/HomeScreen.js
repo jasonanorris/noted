@@ -5,6 +5,22 @@ import useScreenFocus from '../hooks/useScreenFocus';
 
 const PULL_TO_REFRESH_THRESHOLD = 64;
 const MAX_PULL_DISTANCE = 96;
+const DEFAULT_CATEGORY_ORDER = ['People', 'Places', 'Things', 'Projects', 'Media'];
+const CATEGORY_ICON_MAP = {
+  People: '👥',
+  Places: '📍',
+  Things: '◆',
+  Projects: '☷',
+  Media: '▧',
+};
+
+function createCategoryKey(name) {
+  return String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom';
+}
+
+function getCategoryIcon(name) {
+  return CATEGORY_ICON_MAP[name] || String(name || '?').trim().slice(0, 1).toUpperCase();
+}
 
 function getDocumentTime(document) {
   const value = document.updatedAt || document.lastModified || document.createdAt || 0;
@@ -86,6 +102,15 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
   const categoryAreas = useMemo(() => {
     return [...categories].sort((first, second) => {
+      const firstDefaultIndex = DEFAULT_CATEGORY_ORDER.indexOf(first.name);
+      const secondDefaultIndex = DEFAULT_CATEGORY_ORDER.indexOf(second.name);
+
+      if (firstDefaultIndex !== -1 || secondDefaultIndex !== -1) {
+        if (firstDefaultIndex === -1) return 1;
+        if (secondDefaultIndex === -1) return -1;
+        return firstDefaultIndex - secondDefaultIndex;
+      }
+
       if ((second.count || 0) !== (first.count || 0)) {
         return (second.count || 0) - (first.count || 0);
       }
@@ -142,6 +167,8 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
   };
 
   const pullLabel = pullStatus === 'ready' ? 'Release to refresh' : 'Pull to refresh';
+  const documentCountLabel = `${documents.length} ${documents.length === 1 ? 'note' : 'notes'} saved locally`;
+  const categoryCountLabel = `${categoryAreas.length} ${categoryAreas.length === 1 ? 'category' : 'categories'}`;
 
   return (
     <main
@@ -164,9 +191,12 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <p className="home-kicker">Noted</p>
-          <h1 id="home-title" ref={headingRef} tabIndex="-1">Knowledge Storage</h1>
-          <p className="home-subtitle">Capture, sort, and reopen your notes.</p>
+          <h1 id="home-title" ref={headingRef} tabIndex="-1">Noted</h1>
+          <p className="home-subtitle">{documentCountLabel}</p>
+          <div className="home-stats" aria-label="Library summary">
+            <span>{categoryCountLabel}</span>
+            <span>{activeFilter === 'All' ? 'All notes' : activeFilter}</span>
+          </div>
         </div>
 
         <button
@@ -202,12 +232,15 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
       <section className="home-section" aria-labelledby="documents-title">
         <div className="home-section-header">
-          <h2 id="documents-title">Recent Documents</h2>
+          <div>
+            <h2 id="documents-title">Recent</h2>
+            <p>{recentDocuments.length} showing</p>
+          </div>
           <div className="document-header-actions">
             <button className="text-button" type="button" onClick={() => loadDocuments()}>
               Refresh
             </button>
-            <button className="text-button" type="button" onClick={() => setActiveFilter('All')}>View all documents</button>
+            <button className="text-button" type="button" onClick={() => setActiveFilter('All')}>All</button>
           </div>
         </div>
 
@@ -269,17 +302,19 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
           <h2 id="areas-title">Categories</h2>
         </div>
 
-        <div className="area-list">
+        <div className="category-rail" aria-label="Categories">
           {categoryAreas.length ? categoryAreas.map((area) => (
             <button
-              className="area-row"
+              className={`category-chip category-chip-${createCategoryKey(area.name)} ${activeFilter === area.name ? 'is-active' : ''}`}
               type="button"
               key={area.id}
               aria-label={`${area.name}, ${area.count || 0} documents`}
               onClick={() => setActiveFilter(area.name)}
+              aria-pressed={activeFilter === area.name}
             >
-              <span>{area.name}</span>
-              <span>{area.count || 0}</span>
+              <span className="category-chip-icon" aria-hidden="true">{getCategoryIcon(area.name)}</span>
+              <span className="category-chip-name">{area.name}</span>
+              <span className="category-chip-count">{area.count || 0}</span>
             </button>
           )) : (
             <div className="document-state">
