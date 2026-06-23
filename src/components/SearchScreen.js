@@ -128,65 +128,70 @@ function SearchScreen({ onBack, onOpenDocument }) {
       </header>
 
       <section className="search-shell" aria-label="Search documents">
-        <label className="field">
-          <span>Search documents</span>
-          <input
-            className="input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search title, content, tags, or category"
-          />
-        </label>
-
-        <div className="search-filter-grid" aria-label="Search filters">
-          <label className="field">
-            <span>Category</span>
-            <select
-              className="input"
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-            >
-              <option value={ALL_CATEGORIES}>All categories</option>
-              {categoryOptions.map((category) => (
-                <option value={category} key={category}>{category}</option>
-              ))}
-            </select>
+        <section className="search-panel" aria-label="Search controls">
+          <label className="field search-query-field">
+            <span>Search documents</span>
+            <span className="search-input-wrap">
+              <span className="search-input-icon" aria-hidden="true"></span>
+              <input
+                className="input search-input"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search title, content, tags, or category"
+              />
+            </span>
           </label>
 
-          <label className="field">
-            <span>Tag</span>
-            <select
-              className="input"
-              value={tagFilter}
-              onChange={(event) => setTagFilter(event.target.value)}
-            >
-              <option value={ALL_TAGS}>All tags</option>
-              {tagOptions.map((tag) => (
-                <option value={tag} key={tag}>{tag}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        {status === 'ready' && (
-          <div className="search-summary" role="status">
-            <span>{resultSummary}</span>
-            {(query.trim() || hasActiveFilters) && (
-              <button
-                className="text-button"
-                type="button"
-                aria-label="Clear search and filters"
-                onClick={() => {
-                  setQuery('');
-                  setCategoryFilter(ALL_CATEGORIES);
-                  setTagFilter(ALL_TAGS);
-                }}
+          <div className="search-filter-grid" aria-label="Search filters">
+            <label className="field search-filter-field">
+              <span>Category</span>
+              <select
+                className="input search-select"
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
               >
-                Clear
-              </button>
-            )}
+                <option value={ALL_CATEGORIES}>All categories</option>
+                {categoryOptions.map((category) => (
+                  <option value={category} key={category}>{category}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field search-filter-field">
+              <span>Tag</span>
+              <select
+                className="input search-select"
+                value={tagFilter}
+                onChange={(event) => setTagFilter(event.target.value)}
+              >
+                <option value={ALL_TAGS}>All tags</option>
+                {tagOptions.map((tag) => (
+                  <option value={tag} key={tag}>{tag}</option>
+                ))}
+              </select>
+            </label>
           </div>
-        )}
+
+          {status === 'ready' && (
+            <div className="search-summary" role="status">
+              <span>{resultSummary}</span>
+              {(query.trim() || hasActiveFilters) && (
+                <button
+                  className="text-button"
+                  type="button"
+                  aria-label="Clear search and filters"
+                  onClick={() => {
+                    setQuery('');
+                    setCategoryFilter(ALL_CATEGORIES);
+                    setTagFilter(ALL_TAGS);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+        </section>
 
         {status === 'loading' && (
           <div className="document-state" role="status">
@@ -214,16 +219,24 @@ function SearchScreen({ onBack, onOpenDocument }) {
         )}
 
         {status === 'ready' && results.length > 0 && (
-          <div className="document-grid" aria-label="Search results">
-            {results.map((document) => (
-              <DocumentCard
-                document={document}
-                highlightText={(value) => highlightText(value, query)}
-                key={document.id}
-                onSelect={onOpenDocument}
-              />
-            ))}
-          </div>
+          <section className="search-results-section" aria-label="Search results">
+            <div className="home-section-header">
+              <div>
+                <h2>Results</h2>
+                <p>{resultSummary}</p>
+              </div>
+            </div>
+            <div className="document-grid">
+              {results.map((document) => (
+                <DocumentCard
+                  document={document}
+                  highlightText={(value) => highlightText(value, query)}
+                  key={document.id}
+                  onSelect={onOpenDocument}
+                />
+              ))}
+            </div>
+          </section>
         )}
       </section>
     </main>

@@ -442,13 +442,15 @@ function SettingsScreen({ onBack, onImport }) {
         <h1 ref={headingRef} tabIndex="-1">Settings</h1>
       </header>
 
-      <section className="utility-panel" aria-label="App settings">
-        <div>
-          <h2>Local Storage</h2>
-          <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} documents, ${summary.categories} categories, ${summary.tags} tags`}</p>
-        </div>
+      <section className="utility-panel settings-panel" aria-label="App settings">
+        <section className="settings-group settings-summary" aria-labelledby="local-storage-title">
+          <div>
+            <h2 id="local-storage-title">Local Storage</h2>
+            <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} documents, ${summary.categories} categories, ${summary.tags} tags`}</p>
+          </div>
+        </section>
 
-        <section aria-labelledby="storage-usage-title">
+        <section className="settings-group" aria-labelledby="storage-usage-title">
           <h2 id="storage-usage-title">Storage Usage</h2>
           {storageEstimate.status === 'loading' && (
             <div className="document-state" role="status">
@@ -491,30 +493,58 @@ function SettingsScreen({ onBack, onImport }) {
           </div>
         )}
 
-        <section className="document-state backup-section" aria-labelledby="backup-guidance-title">
-          <strong id="backup-guidance-title">Back Up Local Notes</strong>
-          <span>
+        <section className="settings-group backup-section" aria-labelledby="backup-guidance-title">
+          <h2 id="backup-guidance-title">Back Up Local Notes</h2>
+          <p>
             Notes are stored in this browser on this device. Export a JSON backup before clearing data,
             switching browsers, or moving to another device.
-          </span>
-          <div className="utility-actions">
-            <div className="data-actions">
-              <button className="btn btn-primary" type="button" onClick={handleExport} disabled={isBusy}>
-                {isWorking ? 'Working...' : 'Export JSON'}
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={onImport} disabled={isBusy}>
-                Import JSON
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={isBusy}>
-                Clear Local Data
-              </button>
-            </div>
+          </p>
+          <div className="settings-action-list">
+            <button
+              className="settings-action-row"
+              type="button"
+              onClick={handleExport}
+              disabled={isBusy}
+              aria-label={isWorking ? 'Working' : 'Export JSON'}
+            >
+              <span className="settings-action-icon" aria-hidden="true">↓</span>
+              <span>
+                <strong>{isWorking ? 'Working...' : 'Export JSON'}</strong>
+                <small>Download a local backup</small>
+              </span>
+            </button>
+            <button
+              className="settings-action-row"
+              type="button"
+              onClick={onImport}
+              disabled={isBusy}
+              aria-label="Import JSON"
+            >
+              <span className="settings-action-icon" aria-hidden="true">↑</span>
+              <span>
+                <strong>Import JSON</strong>
+                <small>Restore from a backup file</small>
+              </span>
+            </button>
+            <button
+              className="settings-action-row is-danger"
+              type="button"
+              onClick={handleClear}
+              disabled={isBusy}
+              aria-label="Clear Local Data"
+            >
+              <span className="settings-action-icon" aria-hidden="true">!</span>
+              <span>
+                <strong>Clear Local Data</strong>
+                <small>Remove notes from this browser</small>
+              </span>
+            </button>
             <p className="last-exported">Last Exported {formatExportDate(lastExportedAt)}</p>
           </div>
         </section>
 
-        <div className="management-grid" aria-busy={isBusy}>
-          <section aria-labelledby="category-management-title">
+        <div className="management-grid settings-group" aria-busy={isBusy}>
+          <section className="settings-subgroup" aria-labelledby="category-management-title">
             <div className="management-section-header">
               <h2 id="category-management-title">Categories</h2>
               <button
@@ -570,7 +600,7 @@ function SettingsScreen({ onBack, onImport }) {
             </div>
           </section>
 
-          <section aria-labelledby="tag-management-title">
+          <section className="settings-subgroup" aria-labelledby="tag-management-title">
             <div className="management-section-header">
               <h2 id="tag-management-title">Tags</h2>
               <button
@@ -627,7 +657,7 @@ function SettingsScreen({ onBack, onImport }) {
           </section>
         </div>
 
-        <section aria-labelledby="performance-monitoring-title">
+        <section className="settings-group" aria-labelledby="performance-monitoring-title">
           <h2 id="performance-monitoring-title">Performance</h2>
           {performanceMetrics.length ? (
             <div className="management-list">

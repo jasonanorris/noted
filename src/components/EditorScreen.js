@@ -4,6 +4,8 @@ import { createPlainPreview } from '../textFormatting';
 import useScreenFocus from '../hooks/useScreenFocus';
 
 const AUTO_SAVE_DELAY = 900;
+const MIN_SAVE_STATUS_MS = 500;
+const SAVE_SUCCESS_STATUS_MS = 1400;
 const HISTORY_LIMIT = 100;
 
 const formatActions = [
@@ -22,6 +24,12 @@ function parseTags(value) {
     .split(',')
     .map((tag) => tag.trim())
     .filter(Boolean);
+}
+
+function getEditableCategory(document) {
+  const categoryName = document?.categoryName || document?.category || '';
+
+  return categoryName === 'Unfiled' ? '' : categoryName;
 }
 
 function renderInlineFormatting(value) {
@@ -101,9 +109,11 @@ function EditorScreen({ document, onBack, onSaved }) {
   const [tagText, setTagText] = useState('');
   const [editorMode, setEditorMode] = useState('edit');
   const [status, setStatus] = useState('idle');
+  const [saveStatusLabel, setSaveStatusLabel] = useState('');
   const [error, setError] = useState('');
   const hasUserEdited = useRef(false);
   const autoSaveTimer = useRef(null);
+  const statusTimer = useRef(null);
   const contentInput = useRef(null);
   const undoStack = useRef([]);
   const redoStack = useRef([]);
@@ -113,12 +123,17 @@ function EditorScreen({ document, onBack, onSaved }) {
     setCurrentDocument(document || null);
     setTitle(document?.title || '');
     setContent(document?.content || document?.preview || '');
-    setCategory(document?.categoryName || document?.category || '');
+    setCategory(getEditableCategory(document));
     setTagText(createTagText(document?.tags || []));
     setEditorMode('edit');
     setStatus('idle');
+    setSaveStatusLabel('');
     setError('');
     hasUserEdited.current = false;
+    if (statusTimer.current) {
+      clearTimeout(statusTimer.current);
+      statusTimer.current = null;
+    }
     undoStack.current = [];
     redoStack.current = [];
     setHistoryState({ undo: 0, redo: 0 });
@@ -128,6 +143,9 @@ function EditorScreen({ document, onBack, onSaved }) {
     return () => {
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current);
+      }
+      if (statusTimer.current) {
+        clearTimeout(statusTimer.current);
       }
     };
   }, []);
@@ -139,7 +157,11 @@ function EditorScreen({ document, onBack, onSaved }) {
       try {
         const storedCategories = await knowledgeDB.getAllCategories();
         if (isMounted) {
-          setCategoryOptions([...storedCategories].sort((first, second) => first.name.localeCompare(second.name)));
+          setCategoryOptions(
+            [...storedCategories]
+              .filter((category) => category.name !== 'Unfiled')
+              .sort((first, second) => first.name.localeCompare(second.name))
+          );
         }
       } catch (loadError) {
         if (isMounted) {
@@ -165,6 +187,23 @@ function EditorScreen({ document, onBack, onSaved }) {
 
   const previewBlocks = useMemo(() => renderPreviewBlocks(content), [content]);
   const selectedExistingCategory = categoryOptions.some((option) => option.name === category.trim());
+
+  const finishSavingStatus = useCallback((nextStatus, startedAt) => {
+    const elapsed = Date.now() - startedAt;
+    const remaining = Math.max(MIN_SAVE_STATUS_MS - elapsed, 0);
+
+    if (statusTimer.current) {
+      clearTimeout(statusTimer.current);
+    }
+
+    statusTimer.current = window.setTimeout(() => {
+      setSaveStatusLabel(nextStatus === 'autosaved' ? 'Auto-saved' : 'Saved');
+      statusTimer.current = window.setTimeout(() => {
+        setSaveStatusLabel('');
+        statusTimer.current = null;
+      }, SAVE_SUCCESS_STATUS_MS);
+    }, remaining);
+  }, []);
 
   const saveDocument = useCallback(async ({ auto = false } = {}) => {
     if (!canSave) {
@@ -192,7 +231,13 @@ function EditorScreen({ document, onBack, onSaved }) {
     };
 
     try {
+      const saveStartedAt = Date.now();
+      if (statusTimer.current) {
+        clearTimeout(statusTimer.current);
+        statusTimer.current = null;
+      }
       setStatus('saving');
+      setSaveStatusLabel('Saving...');
       setError('');
 
       if (currentDocument?.id) {
@@ -201,6 +246,7 @@ function EditorScreen({ document, onBack, onSaved }) {
         onSaved(savedDocument);
         hasUserEdited.current = false;
         setStatus(auto ? 'autosaved' : 'saved');
+        finishSavingStatus(auto ? 'autosaved' : 'saved', saveStartedAt);
         return savedDocument;
       } else {
         const savedDocument = await knowledgeDB.createDocument({ ...updates });
@@ -208,6 +254,7 @@ function EditorScreen({ document, onBack, onSaved }) {
         onSaved(savedDocument);
         hasUserEdited.current = false;
         setStatus(auto ? 'autosaved' : 'saved');
+        finishSavingStatus(auto ? 'autosaved' : 'saved', saveStartedAt);
         return savedDocument;
       }
     } catch (saveError) {
@@ -215,7 +262,7 @@ function EditorScreen({ document, onBack, onSaved }) {
       setError(saveError?.message || 'Document could not be saved.');
       return null;
     }
-  }, [canSave, category, content, currentDocument, onSaved, status, tagText, title]);
+  }, [canSave, category, content, currentDocument, finishSavingStatus, onSaved, status, tagText, title]);
 
   useEffect(() => {
     if (!hasUserEdited.current || !canSave) return undefined;
@@ -424,55 +471,57 @@ function EditorScreen({ document, onBack, onSaved }) {
       </header>
 
       <section className="editor-shell" aria-label="Document editor">
-        <label className="field">
-          <span>Title</span>
+        <label className="field editor-title-field">
+          <span className="sr-only">Title</span>
           <input
-            className="input"
+            className="input editor-title-input"
             value={title}
             onChange={(event) => markEdited(setTitle)(event.target.value)}
             placeholder="Untitled document"
           />
         </label>
 
-        <div className="field">
-          <span id="editor-category-label">Category</span>
-          {categoryOptions.length > 0 && (
-            <div className="category-choice-list" aria-label="Existing categories">
-              {categoryOptions.map((option) => (
-                <button
-                  className={`category-choice ${category.trim() === option.name ? 'is-active' : ''}`}
-                  type="button"
-                  key={option.id}
-                  onClick={() => selectCategory(option.name)}
-                  aria-pressed={category.trim() === option.name}
-                >
-                  {option.name}
-                </button>
-              ))}
-            </div>
-          )}
-          {!selectedExistingCategory && (
-            <label className="category-custom-field">
-              <span className="sr-only">Category</span>
-              <input
-                className="input"
-                value={category}
-                onChange={(event) => markEdited(setCategory)(event.target.value)}
-                placeholder="New category"
-              />
-            </label>
-          )}
-        </div>
+        <section className="editor-meta-panel" aria-label="Document details">
+          <div className="field">
+            <span id="editor-category-label">Category</span>
+            {categoryOptions.length > 0 && (
+              <div className="category-choice-list" aria-label="Existing categories">
+                {categoryOptions.map((option) => (
+                  <button
+                    className={`category-choice ${category.trim() === option.name ? 'is-active' : ''}`}
+                    type="button"
+                    key={option.id}
+                    onClick={() => selectCategory(option.name)}
+                    aria-pressed={category.trim() === option.name}
+                  >
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {!selectedExistingCategory && (
+              <label className="category-custom-field">
+                <span className="sr-only">Category</span>
+                <input
+                  className="input"
+                  value={category}
+                  onChange={(event) => markEdited(setCategory)(event.target.value)}
+                  placeholder="New category"
+                />
+              </label>
+            )}
+          </div>
 
-        <label className="field">
-          <span>Tags</span>
-          <input
-            className="input"
-            value={tagText}
-            onChange={(event) => markEdited(setTagText)(event.target.value)}
-            placeholder="ideas, project, reference"
-          />
-        </label>
+          <label className="field">
+            <span>Tags</span>
+            <input
+              className="input"
+              value={tagText}
+              onChange={(event) => markEdited(setTagText)(event.target.value)}
+              placeholder="ideas, project, reference"
+            />
+          </label>
+        </section>
 
         <div className="field editor-content-field">
           <div className="editor-content-heading">
@@ -580,10 +629,11 @@ function EditorScreen({ document, onBack, onSaved }) {
         )}
 
         <div className="editor-actions">
-          <span className="form-status" role={status === 'saving' ? 'status' : undefined}>
-            {status === 'saving' && 'Saving...'}
-            {status === 'saved' && 'Saved'}
-            {status === 'autosaved' && 'Auto-saved'}
+          <span
+            className={`form-status editor-save-status ${saveStatusLabel ? 'is-visible' : ''}`}
+            role={saveStatusLabel === 'Saving...' ? 'status' : undefined}
+          >
+            {saveStatusLabel}
           </span>
           <div className="editor-button-group">
             {currentDocument?.id && (
