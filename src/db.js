@@ -447,16 +447,41 @@ export class KnowledgeDB {
   async createTag(tag) {
     await this._ensureReady();
 
+    const timestamp = Date.now();
+    const tagName = typeof tag === 'string' ? tag : tag?.name;
+    const trimmedName = String(tagName || '').trim();
+    if (!trimmedName) throw new Error('Tag name is required.');
+
+    const nextTag = {
+      ...(typeof tag === 'object' && tag ? tag : {}),
+      id: createTaxonomyId(trimmedName),
+      name: trimmedName,
+      count: 0,
+      createdAt: tag?.createdAt || timestamp,
+      updatedAt: timestamp,
+      isCustom: true,
+    };
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['tags'], 'readwrite');
       const store = transaction.objectStore('tags');
 
-      tag.createdAt = Date.now();
+      const request = store.get(nextTag.id);
 
-      const request = store.add(tag);
+      request.onsuccess = () => {
+        if (request.result) {
+          reject(new Error('Tag already exists.'));
+          return;
+        }
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = (error) => reject(error);
+        const addRequest = store.add(nextTag);
+        addRequest.onsuccess = () => {
+          notifyDocumentsChanged();
+          resolve(nextTag);
+        };
+        addRequest.onerror = () => reject(addRequest.error);
+      };
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -515,9 +540,10 @@ export class KnowledgeDB {
   async rebuildTaxonomy() {
     await this._ensureReady();
 
-    const [documents, existingCategories] = await Promise.all([
+    const [documents, existingCategories, existingTags] = await Promise.all([
       this.getAllDocuments(),
       this.getAllCategories(),
+      this.getAllTags(),
     ]);
     const categoryMap = new Map();
     const tagMap = new Map();
@@ -539,6 +565,16 @@ export class KnowledgeDB {
         categoryMap.set(category.id, category);
       }
     });
+
+    existingTags
+      .filter((tag) => tag?.isCustom)
+      .forEach((tag) => {
+        tagMap.set(tag.id, {
+          ...tag,
+          count: 0,
+          updatedAt: tag.updatedAt || timestamp,
+        });
+      });
 
     documents.forEach((document) => {
       const categoryName = (document.categoryName || document.category || 'Unfiled').trim() || 'Unfiled';

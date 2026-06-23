@@ -143,6 +143,8 @@ function SettingsScreen({ onBack, onImport }) {
   const [message, setMessage] = useState('');
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
   const [performanceMetrics, setPerformanceMetrics] = useState(() => summarizePerformanceMetrics());
   const [storageEstimate, setStorageEstimate] = useState(createInitialStorageEstimate);
@@ -324,6 +326,37 @@ function SettingsScreen({ onBack, onImport }) {
     } catch (error) {
       setStatus('error');
       setMessage(error?.message || 'Category could not be added.');
+    }
+  };
+
+  const startAddingTag = () => {
+    setNewTagName('');
+    setIsAddingTag(true);
+  };
+
+  const cancelAddingTag = () => {
+    setNewTagName('');
+    setIsAddingTag(false);
+  };
+
+  const addTag = async (event) => {
+    event.preventDefault();
+
+    const trimmedName = newTagName.trim();
+    if (!trimmedName) return;
+
+    try {
+      setStatus('working');
+      setMessage('Adding tag...');
+      await knowledgeDB.createTag(trimmedName);
+      await loadSummary();
+      setNewTagName('');
+      setIsAddingTag(false);
+      setStatus('success');
+      setMessage('Tag added.');
+    } catch (error) {
+      setStatus('error');
+      setMessage(error?.message || 'Tag could not be added.');
     }
   };
 
@@ -538,7 +571,39 @@ function SettingsScreen({ onBack, onImport }) {
           </section>
 
           <section aria-labelledby="tag-management-title">
-            <h2 id="tag-management-title">Tags</h2>
+            <div className="management-section-header">
+              <h2 id="tag-management-title">Tags</h2>
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Add tag"
+                onClick={startAddingTag}
+                disabled={isBusy || isAddingTag}
+              >
+                +
+              </button>
+            </div>
+            {isAddingTag && (
+              <form className="management-add-form" onSubmit={addTag}>
+                <label className="sr-only" htmlFor="new-tag-name">Tag name</label>
+                <input
+                  id="new-tag-name"
+                  className="input"
+                  type="text"
+                  value={newTagName}
+                  onChange={(event) => setNewTagName(event.target.value)}
+                  placeholder="Tag name"
+                  autoFocus
+                  disabled={isBusy}
+                />
+                <button className="btn btn-primary" type="submit" disabled={isBusy || !newTagName.trim()}>
+                  Add
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={cancelAddingTag} disabled={isBusy}>
+                  Cancel
+                </button>
+              </form>
+            )}
             <div className="management-list">
               {tags.length ? tags.map((tag) => (
                 <div className="management-row" key={tag.id}>

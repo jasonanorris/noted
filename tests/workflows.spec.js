@@ -364,6 +364,14 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByText('1 documents, 6 categories, 2 tags')).toBeVisible();
     await expect(page.locator('.management-list').first()).toContainText('Ideas');
 
+    await page.getByRole('button', { name: 'Add tag' }).click();
+    await expect(page.getByLabel('Tag name')).toBeVisible();
+    await page.getByLabel('Tag name').fill('review');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(page.getByText('Tag added.')).toBeVisible();
+    await expect(page.getByText('1 documents, 6 categories, 3 tags')).toBeVisible();
+    await expect(page.locator('.management-list').nth(1)).toContainText('review');
+
     const projectRow = page.locator('.management-row').filter({ hasText: 'Projects' });
     page.once('dialog', (dialog) => dialog.accept('Renamed Projects'));
     await projectRow.getByRole('button', { name: 'Rename' }).click();
