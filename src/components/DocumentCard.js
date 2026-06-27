@@ -8,7 +8,16 @@ function createPreviewItems(document) {
     .filter(Boolean);
   const items = lines
     .map((line) => {
+      const taskMatch = line.match(/^[-*]\s+\[([ xX])\]\s?(.*)$/);
       const bulletMatch = line.match(/^[-*]\s+(.+)/);
+
+      if (taskMatch) {
+        return {
+          checked: taskMatch[1].toLowerCase() === 'x',
+          text: stripFormatting(taskMatch[2]),
+          type: 'task',
+        };
+      }
 
       if (bulletMatch) {
         return {
@@ -50,7 +59,18 @@ function DocumentCard({ document = {}, highlightText, onSelect }) {
       </span>
       <span className="document-card-preview">
         {previewItems.map((item, index) => (
-          <span className={`document-card-preview-line ${item.type === 'bullet' ? 'is-bullet' : ''}`} key={`${item.text}-${index}`}>
+          <span
+            className={`document-card-preview-line ${item.type === 'bullet' ? 'is-bullet' : ''} ${item.type === 'task' ? 'is-task' : ''}`}
+            key={`${item.text}-${index}`}
+          >
+            {item.type === 'task' && (
+              <span
+                className={`document-card-task-box ${item.checked ? 'is-checked' : ''}`}
+                aria-hidden="true"
+              >
+                {item.checked ? '✓' : ''}
+              </span>
+            )}
             {renderText(item.text, highlightText)}
           </span>
         ))}

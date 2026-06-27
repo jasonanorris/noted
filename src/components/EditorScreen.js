@@ -3,7 +3,6 @@ import { knowledgeDB } from '../db';
 import { createPlainPreview } from '../textFormatting';
 import useScreenFocus from '../hooks/useScreenFocus';
 
-const AUTO_SAVE_DELAY = 900;
 const MIN_SAVE_STATUS_MS = 500;
 const SAVE_SUCCESS_STATUS_MS = 1400;
 const HISTORY_LIMIT = 100;
@@ -14,6 +13,8 @@ const formatActions = [
   { id: 'heading', label: 'Heading', marker: '## ', type: 'line' },
   { id: 'bullet', label: 'Bullet', marker: '- ', type: 'line' },
 ];
+
+const EMPTY_CHECKLIST_ITEM = { checked: false, text: '' };
 
 function createTagText(tags) {
   return Array.isArray(tags) ? tags.join(', ') : '';
@@ -52,6 +53,7 @@ function renderPreviewBlocks(value) {
   const lines = value.split('\n');
   const blocks = [];
   let bullets = [];
+  let tasks = [];
 
   const flushBullets = () => {
     if (!bullets.length) return;
@@ -66,20 +68,46 @@ function renderPreviewBlocks(value) {
     bullets = [];
   };
 
+  const flushTasks = () => {
+    if (!tasks.length) return;
+
+    blocks.push(
+      <ul className="editor-preview-list editor-preview-checklist" key={`tasks-${blocks.length}`}>
+        {tasks.map((task, index) => (
+          <li key={`${task.text}-${index}`}>
+            <input type="checkbox" checked={task.checked} readOnly tabIndex="-1" aria-hidden="true" />
+            <span>{renderInlineFormatting(task.text)}</span>
+          </li>
+        ))}
+      </ul>
+    );
+    tasks = [];
+  };
+
   lines.forEach((line) => {
     const trimmedLine = line.trim();
 
     if (!trimmedLine) {
       flushBullets();
+      flushTasks();
+      return;
+    }
+
+    const taskMatch = trimmedLine.match(/^[-*]\s+\[([ xX])\]\s?(.*)$/);
+    if (taskMatch) {
+      flushBullets();
+      tasks.push({ checked: taskMatch[1].toLowerCase() === 'x', text: taskMatch[2] });
       return;
     }
 
     if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+      flushTasks();
       bullets.push(trimmedLine.slice(2));
       return;
     }
 
     flushBullets();
+    flushTasks();
 
     if (trimmedLine.startsWith('## ')) {
       blocks.push(<h2 key={`heading-${blocks.length}`}>{renderInlineFormatting(trimmedLine.slice(3))}</h2>);
@@ -95,8 +123,37 @@ function renderPreviewBlocks(value) {
   });
 
   flushBullets();
+  flushTasks();
 
   return blocks;
+}
+
+function parseChecklistItems(value) {
+  if (!value.trim()) {
+    return [{ ...EMPTY_CHECKLIST_ITEM }];
+  }
+
+  return value.split('\n').map((line) => {
+    const taskMatch = line.trim().match(/^[-*]\s+\[([ xX])\]\s?(.*)$/);
+    if (taskMatch) {
+      return {
+        checked: taskMatch[1].toLowerCase() === 'x',
+        text: taskMatch[2],
+      };
+    }
+
+    const bulletMatch = line.trim().match(/^[-*]\s+(.*)$/);
+    return {
+      checked: false,
+      text: bulletMatch ? bulletMatch[1] : line,
+    };
+  });
+}
+
+function serializeChecklistItems(items) {
+  return items
+    .map((item) => `- [${item.checked ? 'x' : ' '}] ${item.text}`)
+    .join('\n');
 }
 
 function EditorScreen({ document, onBack, onSaved }) {
@@ -111,8 +168,6 @@ function EditorScreen({ document, onBack, onSaved }) {
   const [status, setStatus] = useState('idle');
   const [saveStatusLabel, setSaveStatusLabel] = useState('');
   const [error, setError] = useState('');
-  const hasUserEdited = useRef(false);
-  const autoSaveTimer = useRef(null);
   const statusTimer = useRef(null);
   const contentInput = useRef(null);
   const undoStack = useRef([]);
@@ -129,7 +184,6 @@ function EditorScreen({ document, onBack, onSaved }) {
     setStatus('idle');
     setSaveStatusLabel('');
     setError('');
-    hasUserEdited.current = false;
     if (statusTimer.current) {
       clearTimeout(statusTimer.current);
       statusTimer.current = null;
@@ -141,9 +195,6 @@ function EditorScreen({ document, onBack, onSaved }) {
 
   useEffect(() => {
     return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
       if (statusTimer.current) {
         clearTimeout(statusTimer.current);
       }
@@ -186,6 +237,7 @@ function EditorScreen({ document, onBack, onSaved }) {
   }, [content, title]);
 
   const previewBlocks = useMemo(() => renderPreviewBlocks(content), [content]);
+  const checklistItems = useMemo(() => parseChecklistItems(content), [content]);
   const selectedExistingCategory = categoryOptions.some((option) => option.name === category.trim());
 
   const finishSavingStatus = useCallback((nextStatus, startedAt) => {
@@ -197,7 +249,7 @@ function EditorScreen({ document, onBack, onSaved }) {
     }
 
     statusTimer.current = window.setTimeout(() => {
-      setSaveStatusLabel(nextStatus === 'autosaved' ? 'Auto-saved' : 'Saved');
+      setSaveStatusLabel('Saved');
       statusTimer.current = window.setTimeout(() => {
         setSaveStatusLabel('');
         statusTimer.current = null;
@@ -205,18 +257,13 @@ function EditorScreen({ document, onBack, onSaved }) {
     }, remaining);
   }, []);
 
-  const saveDocument = useCallback(async ({ auto = false } = {}) => {
+  const saveDocument = useCallback(async () => {
     if (!canSave) {
-      if (!auto) setError('Add a title or note content before saving.');
+      setError('Add a title or note content before saving.');
       return null;
     }
 
-    if (!auto && autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-      autoSaveTimer.current = null;
-    }
-
-    if (auto && (status === 'saving' || !hasUserEdited.current)) {
+    if (status === 'saving') {
       return null;
     }
 
@@ -244,17 +291,15 @@ function EditorScreen({ document, onBack, onSaved }) {
         const savedDocument = await knowledgeDB.updateDocument(currentDocument.id, updates);
         setCurrentDocument(savedDocument);
         onSaved(savedDocument);
-        hasUserEdited.current = false;
-        setStatus(auto ? 'autosaved' : 'saved');
-        finishSavingStatus(auto ? 'autosaved' : 'saved', saveStartedAt);
+        setStatus('saved');
+        finishSavingStatus('saved', saveStartedAt);
         return savedDocument;
       } else {
         const savedDocument = await knowledgeDB.createDocument({ ...updates });
         setCurrentDocument(savedDocument);
         onSaved(savedDocument);
-        hasUserEdited.current = false;
-        setStatus(auto ? 'autosaved' : 'saved');
-        finishSavingStatus(auto ? 'autosaved' : 'saved', saveStartedAt);
+        setStatus('saved');
+        finishSavingStatus('saved', saveStartedAt);
         return savedDocument;
       }
     } catch (saveError) {
@@ -264,27 +309,8 @@ function EditorScreen({ document, onBack, onSaved }) {
     }
   }, [canSave, category, content, currentDocument, finishSavingStatus, onSaved, status, tagText, title]);
 
-  useEffect(() => {
-    if (!hasUserEdited.current || !canSave) return undefined;
-
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-    }
-
-    autoSaveTimer.current = setTimeout(() => {
-      saveDocument({ auto: true });
-    }, AUTO_SAVE_DELAY);
-
-    return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-    };
-  }, [canSave, category, content, saveDocument, tagText, title]);
-
   const markEdited = (setter) => (value) => {
-    hasUserEdited.current = true;
-    if (status === 'saved' || status === 'autosaved') {
+    if (status === 'saved') {
       setStatus('idle');
     }
     setter(value);
@@ -312,8 +338,7 @@ function EditorScreen({ document, onBack, onSaved }) {
   };
 
   const setEditedState = () => {
-    hasUserEdited.current = true;
-    if (status === 'saved' || status === 'autosaved') {
+    if (status === 'saved') {
       setStatus('idle');
     }
   };
@@ -386,6 +411,56 @@ function EditorScreen({ document, onBack, onSaved }) {
     const nextContent = `${content.slice(0, selectionStart)}${insertion}${content.slice(selectionEnd)}`;
     const nextSelection = selectionStart + insertion.length;
     commitContentChange(nextContent, nextSelection);
+  };
+
+  const commitChecklistItems = (nextItems) => {
+    commitContentChange(serializeChecklistItems(nextItems));
+  };
+
+  const updateChecklistItem = (index, updates) => {
+    const nextItems = checklistItems.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, ...updates } : item
+    ));
+
+    commitChecklistItems(nextItems);
+  };
+
+  const addChecklistItem = (afterIndex = checklistItems.length - 1) => {
+    const insertIndex = Math.max(0, afterIndex + 1);
+    const nextItems = [
+      ...checklistItems.slice(0, insertIndex),
+      { ...EMPTY_CHECKLIST_ITEM },
+      ...checklistItems.slice(insertIndex),
+    ];
+
+    commitChecklistItems(nextItems);
+
+    window.requestAnimationFrame(() => {
+      window.document.getElementById(`editor-checklist-item-${insertIndex}`)?.focus();
+    });
+  };
+
+  const removeChecklistItem = (index) => {
+    const nextItems = checklistItems.filter((_, itemIndex) => itemIndex !== index);
+    commitChecklistItems(nextItems.length ? nextItems : [{ ...EMPTY_CHECKLIST_ITEM }]);
+
+    window.requestAnimationFrame(() => {
+      const focusIndex = Math.max(index - 1, 0);
+      window.document.getElementById(`editor-checklist-item-${focusIndex}`)?.focus();
+    });
+  };
+
+  const handleChecklistKeyDown = (event, index) => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      event.preventDefault();
+      addChecklistItem(index);
+      return;
+    }
+
+    if (event.key === 'Backspace' && !event.currentTarget.value && checklistItems.length > 1) {
+      event.preventDefault();
+      removeChecklistItem(index);
+    }
   };
 
   const applyFormat = (action) => {
@@ -495,6 +570,46 @@ function EditorScreen({ document, onBack, onSaved }) {
     }
   };
 
+  useEffect(() => {
+    if (editorMode !== 'preview') {
+      return undefined;
+    }
+
+    const handlePreviewEscape = (event) => {
+      if (event.defaultPrevented || event.key !== 'Escape') {
+        return;
+      }
+
+      event.preventDefault();
+      setEditorMode('edit');
+    };
+
+    window.addEventListener('keydown', handlePreviewEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handlePreviewEscape);
+    };
+  }, [editorMode]);
+
+  useEffect(() => {
+    const handleSaveShortcut = (event) => {
+      const key = event.key.toLowerCase();
+
+      if (event.defaultPrevented || event.altKey || key !== 's' || (!event.ctrlKey && !event.metaKey)) {
+        return;
+      }
+
+      event.preventDefault();
+      saveDocument();
+    };
+
+    window.addEventListener('keydown', handleSaveShortcut);
+
+    return () => {
+      window.removeEventListener('keydown', handleSaveShortcut);
+    };
+  }, [saveDocument]);
+
   return (
     <main id="main-content" className="app-view editor-view" tabIndex="-1" onKeyDown={handleEditorShortcut}>
       <header className="app-view-header">
@@ -514,6 +629,15 @@ function EditorScreen({ document, onBack, onSaved }) {
             placeholder="Untitled document"
           />
         </label>
+        <button
+          className="btn btn-primary editor-header-save"
+          type="button"
+          onClick={() => saveDocument()}
+          title="Save (Ctrl/Cmd+S)"
+          aria-keyshortcuts="Control+S Meta+S"
+        >
+          Save
+        </button>
 
         <section className="editor-meta-panel" aria-label="Document details">
           <div className="field">
@@ -559,7 +683,7 @@ function EditorScreen({ document, onBack, onSaved }) {
 
         <div className="field editor-content-field">
           <div className="editor-content-heading">
-            <label htmlFor="editor-content">Content</label>
+            <label htmlFor={editorMode === 'checklist' ? 'editor-checklist-item-0' : 'editor-content'}>Content</label>
             <div className="segmented-control" aria-label="Editor mode">
               <button
                 className={`segmented-button ${editorMode === 'edit' ? 'is-active' : ''}`}
@@ -579,6 +703,15 @@ function EditorScreen({ document, onBack, onSaved }) {
                 aria-keyshortcuts="Control+Shift+P Meta+Shift+P"
               >
                 Preview
+              </button>
+              <button
+                className={`segmented-button ${editorMode === 'checklist' ? 'is-active' : ''}`}
+                type="button"
+                onClick={() => setEditorMode('checklist')}
+                aria-pressed={editorMode === 'checklist'}
+                title="Checklist"
+              >
+                Checklist
               </button>
             </div>
           </div>
@@ -645,6 +778,31 @@ function EditorScreen({ document, onBack, onSaved }) {
                 placeholder="Start writing..."
               />
             </>
+          ) : editorMode === 'checklist' ? (
+            <div className="editor-checklist" aria-label="Checklist editor">
+              {checklistItems.map((item, index) => (
+                <div className="editor-checklist-row" key={`checklist-item-${index}`}>
+                  <input
+                    className="editor-checklist-checkbox"
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={(event) => updateChecklistItem(index, { checked: event.target.checked })}
+                    aria-label={`Mark item ${index + 1} ${item.checked ? 'incomplete' : 'complete'}`}
+                  />
+                  <input
+                    id={`editor-checklist-item-${index}`}
+                    className="input editor-checklist-input"
+                    value={item.text}
+                    onChange={(event) => updateChecklistItem(index, { text: event.target.value })}
+                    onKeyDown={(event) => handleChecklistKeyDown(event, index)}
+                    placeholder={index === 0 ? 'Checklist item' : 'Next item'}
+                  />
+                </div>
+              ))}
+              <button className="text-button checklist-add-button" type="button" onClick={() => addChecklistItem()}>
+                Add item
+              </button>
+            </div>
           ) : (
             <div className="editor-preview" aria-label="Document preview">
               {previewBlocks.length ? previewBlocks : (
@@ -676,15 +834,6 @@ function EditorScreen({ document, onBack, onSaved }) {
                 Delete
               </button>
             )}
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={() => saveDocument()}
-              title="Save (Ctrl/Cmd+S)"
-              aria-keyshortcuts="Control+S Meta+S"
-            >
-              Save
-            </button>
           </div>
         </div>
       </section>
