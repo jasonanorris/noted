@@ -134,7 +134,7 @@ function estimateStorageWithTimeout() {
   });
 }
 
-function SettingsScreen({ onBack, onImport }) {
+function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
   const headingRef = useScreenFocus();
   const [summary, setSummary] = useState({ documents: 0, categories: 0, tags: 0 });
   const [categories, setCategories] = useState([]);
@@ -378,7 +378,7 @@ function SettingsScreen({ onBack, onImport }) {
   };
 
   const deleteCategory = async (category) => {
-    const confirmed = window.confirm(`Move documents in "${category.name}" to Unfiled?`);
+    const confirmed = window.confirm(`Delete "${category.name}" and move its documents to Unfiled?`);
     if (!confirmed) return;
 
     try {
@@ -447,6 +447,33 @@ function SettingsScreen({ onBack, onImport }) {
           <div>
             <h2 id="local-storage-title">Local Storage</h2>
             <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} documents, ${summary.categories} categories, ${summary.tags} tags`}</p>
+          </div>
+        </section>
+
+        <section className="settings-group" aria-labelledby="appearance-title">
+          <div className="settings-row-header">
+            <div>
+              <h2 id="appearance-title">Appearance</h2>
+              <p>Choose the app color mode for this browser.</p>
+            </div>
+          </div>
+          <div className="theme-toggle" role="group" aria-label="Color mode">
+            <button
+              className={`segmented-button ${theme === 'light' ? 'is-active' : ''}`}
+              type="button"
+              onClick={() => onThemeChange?.('light')}
+              aria-pressed={theme === 'light'}
+            >
+              Light
+            </button>
+            <button
+              className={`segmented-button ${theme === 'dark' ? 'is-active' : ''}`}
+              type="button"
+              onClick={() => onThemeChange?.('dark')}
+              aria-pressed={theme === 'dark'}
+            >
+              Dark
+            </button>
           </div>
         </section>
 

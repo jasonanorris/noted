@@ -1,22 +1,31 @@
-import { createPlainPreview } from '../textFormatting';
+import { createPlainPreview, stripFormatting } from '../textFormatting';
 
-function formatUpdatedDate(value) {
-  if (!value) return 'Not saved yet';
+function createPreviewItems(document) {
+  const source = document.content || document.preview || document.excerpt || '';
+  const lines = String(source)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const items = lines
+    .map((line) => {
+      const bulletMatch = line.match(/^[-*]\s+(.+)/);
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Date unknown';
+      if (bulletMatch) {
+        return {
+          text: stripFormatting(bulletMatch[1]),
+          type: 'bullet',
+        };
+      }
 
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
-  }).format(date);
-}
+      return {
+        text: stripFormatting(line),
+        type: 'text',
+      };
+    })
+    .filter((item) => item.text)
+    .slice(0, 3);
 
-function getPreview(document) {
-  const preview = document.preview || document.excerpt || document.content || '';
-
-  return createPlainPreview(preview);
+  return items.length ? items : [{ text: createPlainPreview(source), type: 'text' }];
 }
 
 function renderText(value, renderer) {
@@ -25,10 +34,9 @@ function renderText(value, renderer) {
 
 function DocumentCard({ document = {}, highlightText, onSelect }) {
   const title = document.title?.trim() || 'Untitled document';
-  const preview = getPreview(document);
+  const previewItems = createPreviewItems(document);
   const category = document.categoryName || document.category || 'Unfiled';
   const tags = Array.isArray(document.tags) ? document.tags.filter(Boolean).slice(0, 3) : [];
-  const updatedAt = document.updatedAt || document.lastModified || document.createdAt;
 
   const handleSelect = () => {
     if (onSelect) onSelect(document);
@@ -36,25 +44,27 @@ function DocumentCard({ document = {}, highlightText, onSelect }) {
 
   return (
     <button className="document-card" type="button" onClick={handleSelect}>
-      <span className="document-card-category">{category}</span>
-
-      <span className="document-card-title">{renderText(title, highlightText)}</span>
-      <span className="document-card-preview">{renderText(preview, highlightText)}</span>
-
-      <span className="document-card-meta">
-        <span>{formatUpdatedDate(updatedAt)}</span>
-        <span>{tags.length ? `${tags.length} tags` : 'No tags'}</span>
+      <span className="document-card-heading">
+        <span className="document-card-title">{renderText(title, highlightText)}</span>
+        <span className="document-card-category">{category}</span>
+      </span>
+      <span className="document-card-preview">
+        {previewItems.map((item, index) => (
+          <span className={`document-card-preview-line ${item.type === 'bullet' ? 'is-bullet' : ''}`} key={`${item.text}-${index}`}>
+            {renderText(item.text, highlightText)}
+          </span>
+        ))}
       </span>
 
-      <span className="document-card-tags" aria-label={tags.length ? 'Document tags' : 'No document tags'}>
-        {tags.length ? (
-          tags.map((tag) => (
-            <span className="document-card-tag" key={tag}>{renderText(tag, highlightText)}</span>
-          ))
-        ) : (
-          <span className="document-card-tag is-empty">Add tags</span>
-        )}
-      </span>
+      {tags.length > 0 && (
+        <span className="document-card-tags" aria-label="Document tags">
+          {tags.map((tag, index) => (
+            <span className={`document-card-tag tag-tone-${(index % 4) + 1}`} key={tag}>
+              {renderText(tag, highlightText)}
+            </span>
+          ))}
+        </span>
+      )}
     </button>
   );
 }

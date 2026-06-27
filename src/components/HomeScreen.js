@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Box, BriefcaseBusiness, Image, MapPin, UsersRound } from 'lucide-react';
 import LazyDocumentCard from './LazyDocumentCard';
 import { knowledgeDB } from '../db';
 import useScreenFocus from '../hooks/useScreenFocus';
@@ -7,19 +8,25 @@ const PULL_TO_REFRESH_THRESHOLD = 64;
 const MAX_PULL_DISTANCE = 96;
 const DEFAULT_CATEGORY_ORDER = ['People', 'Places', 'Things', 'Projects', 'Media'];
 const CATEGORY_ICON_MAP = {
-  People: '👥',
-  Places: '📍',
-  Things: '◆',
-  Projects: '☷',
-  Media: '▧',
+  People: UsersRound,
+  Places: MapPin,
+  Things: Box,
+  Projects: BriefcaseBusiness,
+  Media: Image,
 };
 
 function createCategoryKey(name) {
   return String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom';
 }
 
-function getCategoryIcon(name) {
-  return CATEGORY_ICON_MAP[name] || String(name || '?').trim().slice(0, 1).toUpperCase();
+function CategoryIcon({ name }) {
+  const Icon = CATEGORY_ICON_MAP[name];
+
+  if (Icon) {
+    return <Icon aria-hidden="true" size={24} strokeWidth={2.6} />;
+  }
+
+  return <span aria-hidden="true">{String(name || '?').trim().slice(0, 1).toUpperCase()}</span>;
 }
 
 function getDocumentTime(document) {
@@ -76,20 +83,6 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
     return () => window.removeEventListener('documents:changed', handleDocumentsChanged);
   }, [loadDocuments]);
 
-  const documentFilters = useMemo(() => {
-    const categories = documents
-      .map((document) => document.categoryName || document.category)
-      .filter(Boolean);
-
-    return ['All', ...Array.from(new Set(categories))];
-  }, [documents]);
-
-  useEffect(() => {
-    if (!documentFilters.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [activeFilter, documentFilters]);
-
   const recentDocuments = useMemo(() => {
     return [...documents]
       .filter((document) => {
@@ -118,6 +111,14 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
       return first.name.localeCompare(second.name);
     });
   }, [categories]);
+
+  useEffect(() => {
+    const categoryNames = categoryAreas.map((category) => category.name);
+
+    if (activeFilter !== 'All' && !categoryNames.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [activeFilter, categoryAreas]);
 
   const handleTouchStart = (event) => {
     if (window.scrollY > 0 || documentStatus === 'loading') {
@@ -167,8 +168,6 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
   };
 
   const pullLabel = pullStatus === 'ready' ? 'Release to refresh' : 'Pull to refresh';
-  const documentCountLabel = `${documents.length} ${documents.length === 1 ? 'note' : 'notes'} saved locally`;
-  const categoryCountLabel = `${categoryAreas.length} ${categoryAreas.length === 1 ? 'category' : 'categories'}`;
 
   return (
     <main
@@ -191,11 +190,9 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
 
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <h1 id="home-title" ref={headingRef} tabIndex="-1">Noted</h1>
-          <p className="home-subtitle">{documentCountLabel}</p>
-          <div className="home-stats" aria-label="Library summary">
-            <span>{categoryCountLabel}</span>
-            <span>{activeFilter === 'All' ? 'All notes' : activeFilter}</span>
+          <div className="home-title-row">
+            <h1 id="home-title" ref={headingRef} tabIndex="-1">Noted</h1>
+            <p className="home-subtitle">local no cloud</p>
           </div>
         </div>
 
@@ -230,34 +227,35 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
         </button>
       </div>
 
-      <section className="home-section" aria-labelledby="documents-title">
-        <div className="home-section-header">
-          <div>
-            <h2 id="documents-title">Recent</h2>
-            <p>{recentDocuments.length} showing</p>
-          </div>
-          <div className="document-header-actions">
-            <button className="text-button" type="button" onClick={() => loadDocuments()}>
-              Refresh
-            </button>
-            <button className="text-button" type="button" onClick={() => setActiveFilter('All')}>All</button>
-          </div>
-        </div>
-
-        <div className="document-filter-bar" aria-label="Filter recent documents">
-          {documentFilters.map((filter) => (
+      <section className="home-section home-category-section" aria-label="Categories">
+        <div className="category-rail" aria-label="Categories">
+          {categoryAreas.length ? categoryAreas.map((area) => (
             <button
-              className={`document-filter ${activeFilter === filter ? 'is-active' : ''}`}
+              className={`category-chip category-chip-${createCategoryKey(area.name)} ${activeFilter === area.name ? 'is-active' : ''}`}
               type="button"
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              aria-pressed={activeFilter === filter}
+              key={area.id}
+              aria-label={`${area.name}, ${area.count || 0} documents`}
+              onClick={() => setActiveFilter((currentFilter) => (
+                currentFilter === area.name ? 'All' : area.name
+              ))}
+              aria-pressed={activeFilter === area.name}
             >
-              {filter}
+              <span className="category-chip-icon">
+                <CategoryIcon name={area.name} />
+              </span>
+              <span className="category-chip-name">{area.name}</span>
+              <span className="category-chip-count">{area.count || 0}</span>
             </button>
-          ))}
+          )) : (
+            <div className="document-state">
+              <strong>No categories yet</strong>
+              <span>Save a document with a category to organize this list.</span>
+            </div>
+          )}
         </div>
+      </section>
 
+      <section className="home-section" aria-label="Recent documents">
         {documentStatus === 'loading' && (
           <div className="document-state" role="status">
             <span className="spinner" aria-hidden="true"></span>
@@ -295,34 +293,6 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
             ))}
           </div>
         )}
-      </section>
-
-      <section className="home-section" aria-labelledby="areas-title">
-        <div className="home-section-header">
-          <h2 id="areas-title">Categories</h2>
-        </div>
-
-        <div className="category-rail" aria-label="Categories">
-          {categoryAreas.length ? categoryAreas.map((area) => (
-            <button
-              className={`category-chip category-chip-${createCategoryKey(area.name)} ${activeFilter === area.name ? 'is-active' : ''}`}
-              type="button"
-              key={area.id}
-              aria-label={`${area.name}, ${area.count || 0} documents`}
-              onClick={() => setActiveFilter(area.name)}
-              aria-pressed={activeFilter === area.name}
-            >
-              <span className="category-chip-icon" aria-hidden="true">{getCategoryIcon(area.name)}</span>
-              <span className="category-chip-name">{area.name}</span>
-              <span className="category-chip-count">{area.count || 0}</span>
-            </button>
-          )) : (
-            <div className="document-state">
-              <strong>No categories yet</strong>
-              <span>Save a document with a category to organize this list.</span>
-            </div>
-          )}
-        </div>
       </section>
     </main>
   );

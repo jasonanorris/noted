@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noted Home Design Options</title>
+  <style>
+    :root {
+      --ink: #172126;
+      --muted: #65747b;
+      --soft: #f2f5f6;
+      --paper: #ffffff;
+      --line: rgba(23, 33, 38, 0.08);
+      --blue: #176f9f;
+      --green: #20a26d;
+      --purple: #8b45e3;
+      --orange: #ed7d31;
+      --red: #e94f5f;
+      --shadow: 0 16px 38px rgba(27, 44, 52, 0.12);
+      --shadow-soft: 0 8px 20px rgba(27, 44, 52, 0.08);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #e9eef0;
+      color: var(--ink);
+    }
+
+    .page {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .intro {
+      max-width: 760px;
+      margin-bottom: 20px;
+    }
+
+    .intro h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.1;
+    }
+
+    .intro p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-weight: 650;
+      line-height: 1.45;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+
+    .phone {
+      min-height: 780px;
+      border: 1px solid rgba(23, 33, 38, 0.1);
+      border-radius: 34px;
+      background: #f5f7f8;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .screen {
+      position: relative;
+      min-height: 780px;
+      padding: 22px 18px 104px;
+    }
+
+    .topbar,
+    .section-head,
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .title {
+      font-size: 34px;
+      font-weight: 850;
+      line-height: 1.05;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .round-button {
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--paper);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+    }
+
+    .hamburger,
+    .search-mark {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .hamburger::before,
+    .hamburger::after,
+    .hamburger span {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 18px;
+      height: 2px;
+      border-radius: 2px;
+      background: currentColor;
+    }
+
+    .hamburger::before {
+      top: 2px;
+    }
+
+    .hamburger span {
+      top: 8px;
+    }
+
+    .hamburger::after {
+      top: 14px;
+    }
+
+    .search-mark {
+      border: 2px solid currentColor;
+      border-radius: 50%;
+    }
+
+    .search-mark::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 2px;
+      right: -6px;
+      bottom: -3px;
+      border-radius: 2px;
+      background: currentColor;
+      transform: rotate(45deg);
+    }
+
+    .category-row {
+      display: flex;
+      gap: 10px;
+      overflow: hidden;
+      padding: 4px 0 14px;
+    }
+
+    .mini-card {
+      width: 92px;
+      min-height: 126px;
+      border-radius: 18px;
+      background: var(--paper);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      text-align: center;
+    }
+
+    .icon-bubble {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .blue {
+      background: #e5eeff;
+      color: #2d6cdf;
+    }
+
+    .green {
+      background: #d9f4e8;
+      color: var(--green);
+    }
+
+    .purple {
+      background: #efdfff;
+      color: var(--purple);
+    }
+
+    .orange {
+      background: #feeadd;
+      color: var(--orange);
+    }
+
+    .red {
+      background: #fde0e3;
+      color: var(--red);
+    }
+
+    .mini-card strong {
+      font-size: 14px;
+      line-height: 1.1;
+    }
+
+    .mini-card span {
+      color: #4b5c68;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .note-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .note {
+      min-height: 118px;
+      border-radius: 20px;
+      background: var(--paper);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      gap: 8px;
+      padding: 16px;
+    }
+
+    .note strong {
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .note p {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.35;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 6px;
+      margin-top: auto;
+    }
+
+    .tag {
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--muted);
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .fab-stack {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      justify-items: center;
+      gap: 10px;
+    }
+
+    .fab {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      box-shadow: var(--shadow);
+      display: grid;
+      place-items: center;
+      font-size: 36px;
+      font-weight: 500;
+    }
+
+    .fab.secondary {
+      width: 52px;
+      height: 52px;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 18px;
+    }
+
+    .section {
+      margin-top: 22px;
+    }
+
+    .section-head {
+      margin-bottom: 10px;
+    }
+
+    .section-head h3 {
+      font-size: 21px;
+      font-weight: 850;
+    }
+
+    .option-a .hero-card {
+      margin-top: 18px;
+      border-radius: 28px;
+      background:
+        linear-gradient(135deg, rgba(23, 111, 159, 0.15), rgba(255, 255, 255, 0.94)),
+        var(--paper);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 10px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .option-b .screen {
+      background: #101719;
+      color: #f7fbfb;
+    }
+
+    .option-b .muted,
+    .option-b .label {
+      color: #a9b7bc;
+    }
+
+    .option-b .round-button,
+    .option-b .note,
+    .option-b .mini-card {
+      background: #182225;
+      color: #f7fbfb;
+      box-shadow: none;
+    }
+
+    .option-b .note {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .option-b .tag {
+      background: rgba(255, 255, 255, 0.08);
+      color: #b9c8cc;
+    }
+
+    .option-b .fab.secondary {
+      background: #182225;
+      color: #f7fbfb;
+    }
+
+    .focus-strip {
+      margin-top: 20px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, #1f8cbf, #2aa58e);
+      padding: 18px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+    }
+
+    .focus-strip h2 {
+      max-width: 230px;
+      font-size: 28px;
+      line-height: 1.08;
+    }
+
+    .quick-search {
+      height: 52px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #dce8eb;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      margin-top: 18px;
+      font-weight: 750;
+    }
+
+    .option-c .screen {
+      background: #fbfcfc;
+    }
+
+    .option-c .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      margin: -22px -18px 0;
+      padding: 18px;
+      background: rgba(251, 252, 252, 0.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .option-c .compact-search {
+      height: 48px;
+      border-radius: 18px;
+      background: var(--soft);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      color: var(--muted);
+      font-weight: 750;
+      margin-top: 18px;
+    }
+
+    .option-c .category-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      overflow: visible;
+      gap: 8px;
+    }
+
+    .option-c .mini-card {
+      width: auto;
+      min-height: 98px;
+      border-radius: 16px;
+      gap: 5px;
+    }
+
+    .option-c .icon-bubble {
+      width: 42px;
+      height: 42px;
+      font-size: 18px;
+    }
+
+    .option-c .mini-card strong {
+      font-size: 11px;
+    }
+
+    .option-c .mini-card span {
+      font-size: 12px;
+    }
+
+    .option-c .note {
+      min-height: 96px;
+      border: 1px solid var(--line);
+      box-shadow: none;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+
+    .option-c .note p,
+    .option-c .tag-row {
+      grid-column: 1 / -1;
+    }
+
+    .date-pill {
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--muted);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .option-d .screen {
+      background:
+        radial-gradient(circle at 30% 0%, rgba(32, 162, 109, 0.16), transparent 34%),
+        #f6f8f8;
+    }
+
+    .option-d .library-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .library-tile {
+      min-height: 130px;
+      border-radius: 24px;
+      background: var(--paper);
+      box-shadow: var(--shadow-soft);
+      padding: 16px;
+      display: grid;
+      align-content: space-between;
+    }
+
+    .library-tile.large {
+      grid-column: 1 / -1;
+      min-height: 154px;
+      background: #17323a;
+      color: white;
+    }
+
+    .library-tile strong {
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .library-tile span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .library-tile.large span {
+      color: #b9ccd1;
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        padding: 14px;
+      }
+
+      .options {
+        grid-template-columns: 1fr;
+      }
+
+      .phone,
+      .screen {
+        min-height: 740px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro">
+      <h1>Noted home screen directions</h1>
+      <p>Static explorations only. These do not touch the live React homescreen, IndexedDB data, routing, or service worker.</p>
+    </section>
+
+    <section class="options" aria-label="Home screen design options">
+      <article class="phone option-a" aria-labelledby="option-a-title">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <div class="label">Option A</div>
+              <h2 id="option-a-title" class="title">Dashboard</h2>
+            </div>
+            <button class="round-button" type="button" aria-label="Settings"><span class="hamburger"><span></span></span></button>
+          </div>
+
+          <section class="hero-card">
+            <p class="muted">Local library</p>
+            <h2 class="title">42 notes saved locally</h2>
+            <div class="stat-grid">
+              <div class="stat"><strong>5</strong><span>Categories</span></div>
+              <div class="stat"><strong>18</strong><span>Tags</span></div>
+              <div class="stat"><strong>7</strong><span>This week</span></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h3>Categories</h3>
+              <p class="muted">All</p>
+            </div>
+            <div class="category-row">
+              <div class="mini-card"><div class="icon-bubble blue">P</div><strong>People</strong><span>12</span></div>
+              <div class="mini-card"><div class="icon-bubble green">L</div><strong>Places</strong><span>18</span></div>
+              <div class="mini-card"><div class="icon-bubble purple">T</div><strong>Things</strong><span>34</span></div>
+              <div class="mini-card"><div class="icon-bubble orange">Pr</div><strong>Projects</strong><span>27</span></div>
+              <div class="mini-card"><div class="icon-bubble red">M</div><strong>Media</strong><span>41</span></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h3>Recent</h3>
+              <p class="muted">12 showing</p>
+            </div>
+            <div class="note-list">
+              <article class="note"><strong>Field notes from gallery visit</strong><p>Follow up on installation lighting and image references.</p><div class="tag-row"><span class="tag">Media</span><span class="tag">reference</span></div></article>
+              <article class="note"><strong>Research contacts</strong><p>People to interview for the archive project.</p><div class="tag-row"><span class="tag">People</span><span class="tag">project</span></div></article>
+            </div>
+          </section>
+
+          <div class="fab-stack"><div class="fab secondary"><span class="search-mark"></span></div><div class="fab">+</div></div>
+        </div>
+      </article>
+
+      <article class="phone option-b" aria-labelledby="option-b-title">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <div class="label">Option B</div>
+              <h2 id="option-b-title" class="title">Command Center</h2>
+            </div>
+            <button class="round-button" type="button" aria-label="Settings"><span class="hamburger"><span></span></span></button>
+          </div>
+
+          <section class="focus-strip">
+            <p class="muted">Ready offline</p>
+            <h2>Capture now. Sort later.</h2>
+            <div class="quick-search"><span class="search-mark"></span><span>Search notes, places, tags</span></div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h3>Areas</h3>
+              <p class="muted">5 folders</p>
+            </div>
+            <div class="category-row">
+              <div class="mini-card"><div class="icon-bubble blue">P</div><strong>People</strong><span>12</span></div>
+              <div class="mini-card"><div class="icon-bubble green">L</div><strong>Places</strong><span>18</span></div>
+              <div class="mini-card"><div class="icon-bubble purple">T</div><strong>Things</strong><span>34</span></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h3>Recent</h3>
+              <p class="muted">Updated today</p>
+            </div>
+            <div class="note-list">
+              <article class="note"><strong>Opening checklist</strong><p>Venue setup, labels, backup drive, and press list.</p><div class="tag-row"><span class="tag">Projects</span><span class="tag">urgent</span></div></article>
+              <article class="note"><strong>Interview fragments</strong><p>Quotes and unanswered follow-up questions.</p><div class="tag-row"><span class="tag">People</span></div></article>
+              <article class="note"><strong>Reference images</strong><p>Composition notes for scanned contact sheets.</p><div class="tag-row"><span class="tag">Media</span></div></article>
+            </div>
+          </section>
+
+          <div class="fab-stack"><div class="fab secondary"><span class="search-mark"></span></div><div class="fab">+</div></div>
+        </div>
+      </article>
+
+      <article class="phone option-c" aria-labelledby="option-c-title">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <div class="label">Option C</div>
+              <h2 id="option-c-title" class="title">Compact</h2>
+            </div>
+            <button class="round-button" type="button" aria-label="Settings"><span class="hamburger"><span></span></span></button>
+          </div>
+
+          <div class="compact-search"><span class="search-mark"></span><span>Search your library</span></div>
+
+          <section class="section">
+            <div class="section-head">
+              <h3>Categories</h3>
+              <p class="muted">Tap to filter</p>
+            </div>
+            <div class="category-row">
+              <div class="mini-card"><div class="icon-bubble blue">P</div><strong>People</strong><span>12</span></div>
+              <div class="mini-card"><div class="icon-bubble green">L</div><strong>Places</strong><span>18</span></div>
+              <div class="mini-card"><div class="icon-bubble purple">T</div><strong>Things</strong><span>34</span></div>
+              <div class="mini-card"><div class="icon-bubble orange">Pr</div><strong>Projects</strong><span>27</span></div>
+              <div class="mini-card"><div class="icon-bubble red">M</div><strong>Media</strong><span>41</span></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h3>Recent</h3>
+              <p class="muted">42 notes</p>
+            </div>
+            <div class="note-list">
+              <article class="note"><strong>Project brief</strong><span class="date-pill">Today</span><p>Condensed goals, risks, and next actions.</p><div class="tag-row"><span class="tag">Projects</span><span class="tag">mvp</span></div></article>
+              <article class="note"><strong>Neighborhood walk</strong><span class="date-pill">Jun 26</span><p>Places to revisit with better light.</p><div class="tag-row"><span class="tag">Places</span></div></article>
+              <article class="note"><strong>Book references</strong><span class="date-pill">Jun 25</span><p>Pull bibliography into media notes.</p><div class="tag-row"><span class="tag">Things</span></div></article>
+            </div>
+          </section>
+
+          <div class="fab-stack"><div class="fab secondary"><span class="search-mark"></span></div><div class="fab">+</div></div>
+        </div>
+      </article>
+
+      <article class="phone option-d" aria-labelledby="option-d-title">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <div class="label">Option D</div>
+              <h2 id="option-d-title" class="title">Library Tiles</h2>
+            </div>
+            <button class="round-button" type="button" aria-label="Settings"><span class="hamburger"><span></span></span></button>
+          </div>
+
+          <section class="library-grid" aria-label="Library overview">
+            <div class="library-tile large"><strong>What are you collecting today?</strong><span>42 notes saved on this device</span></div>
+            <div class="library-tile"><div class="icon-bubble blue">P</div><strong>People</strong><span>12 notes</span></div>
+            <div class="library-tile"><div class="icon-bubble green">L</div><strong>Places</strong><span>18 notes</span></div>
+            <div class="library-tile"><div class="icon-bubble purple">T</div><strong>Things</strong><span>34 notes</span></div>
+            <div class="library-tile"><div class="icon-bubble orange">Pr</div><strong>Projects</strong><span>27 notes</span></div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h3>Recent</h3>
+              <p class="muted">All notes</p>
+            </div>
+            <div class="note-list">
+              <article class="note"><strong>Archive taxonomy</strong><p>Category rules and naming cleanup.</p><div class="tag-row"><span class="tag">Projects</span></div></article>
+              <article class="note"><strong>Media references</strong><p>Images to attach after export workflow lands.</p><div class="tag-row"><span class="tag">Media</span></div></article>
+            </div>
+          </section>
+
+          <div class="fab-stack"><div class="fab secondary"><span class="search-mark"></span></div><div class="fab">+</div></div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

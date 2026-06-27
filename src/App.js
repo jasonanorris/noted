@@ -13,6 +13,7 @@ const ImportScreen = lazyWithPreload(() => import('./components/ImportScreen'));
 const SearchScreen = lazyWithPreload(() => import('./components/SearchScreen'));
 const SettingsScreen = lazyWithPreload(() => import('./components/SettingsScreen'));
 const deferredScreens = [EditorScreen, ImportScreen, SearchScreen, SettingsScreen];
+const THEME_STORAGE_KEY = 'noted:theme';
 
 const viewTitles = {
   home: 'Knowledge Storage',
@@ -26,6 +27,17 @@ function getInitialView() {
   const view = window.history.state?.view || window.location.hash.replace('#', '');
 
   return viewTitles[view] ? view : 'home';
+}
+
+function getInitialTheme() {
+  try {
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme;
+  } catch (error) {
+    // Theme preference is cosmetic; fall back quietly.
+  }
+
+  return 'light';
 }
 
 function ViewLoadingFallback() {
@@ -97,6 +109,7 @@ if ('serviceWorker' in navigator) {
 function App() {
   const [activeView, setActiveView] = useState(getInitialView);
   const [activeDocument, setActiveDocument] = useState(null);
+  const [theme, setTheme] = useState(getInitialTheme);
 
   const navigate = useCallback((view, options = {}) => {
     const nextView = viewTitles[view] ? view : 'home';
@@ -150,6 +163,16 @@ function App() {
   }, [activeView]);
 
   useEffect(() => {
+    document.documentElement.classList.toggle('dark-theme', theme === 'dark');
+
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (error) {
+      // Theme preference should not block app usage.
+    }
+  }, [theme]);
+
+  useEffect(() => {
     const preloadScreens = () => {
       deferredScreens.forEach((Screen) => Screen.preload());
     };
@@ -192,7 +215,14 @@ function App() {
       return <ImportScreen onBack={() => navigate('settings')} />;
     }
 
-    return <SettingsScreen onBack={() => navigate('home')} onImport={() => navigate('import')} />;
+    return (
+      <SettingsScreen
+        onBack={() => navigate('home')}
+        onImport={() => navigate('import')}
+        theme={theme}
+        onThemeChange={setTheme}
+      />
+    );
   }, [
     activeDocument,
     activeView,
@@ -200,6 +230,7 @@ function App() {
     navigate,
     openDocument,
     startNewDocument,
+    theme,
   ]);
 
   return (

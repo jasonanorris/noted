@@ -5,6 +5,7 @@ const DB_VERSION = 4;
 const REQUIRED_STORES = ['documents', 'categories', 'tags', 'settings'];
 const BACKUP_STORES = ['documents', 'categories', 'tags', 'settings'];
 const DEFAULT_CATEGORY_NAMES = ['People', 'Places', 'Things', 'Projects', 'Media'];
+const DELETED_DEFAULT_CATEGORIES_SETTING = 'deletedDefaultCategoryIds';
 
 function createIndex(store, indexName, keyPath = indexName) {
   if (!store.indexNames.contains(indexName)) {
@@ -114,6 +115,10 @@ function createDefaultCategory(name, timestamp) {
     updatedAt: timestamp,
     isDefault: true,
   };
+}
+
+function normalizeSettingArray(value) {
+  return Array.isArray(value) ? value.filter(Boolean) : [];
 }
 
 export class KnowledgeDB {
@@ -331,6 +336,8 @@ export class KnowledgeDB {
     const trimmedName = String(categoryName || '').trim();
     if (!trimmedName) throw new Error('Category name is required.');
 
+    await this.unmarkDefaultCategoryDeleted(createTaxonomyId(trimmedName));
+
     const nextCategory = {
       ...(typeof category === 'object' && category ? category : {}),
       id: createTaxonomyId(trimmedName),
@@ -420,6 +427,7 @@ export class KnowledgeDB {
     await this._ensureReady();
 
     const timestamp = Date.now();
+    const deletedDefaultCategoryIds = new Set(await this.getDeletedDefaultCategoryIds());
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['categories'], 'readwrite');
@@ -427,6 +435,8 @@ export class KnowledgeDB {
 
       DEFAULT_CATEGORY_NAMES.forEach((categoryName) => {
         const id = createTaxonomyId(categoryName);
+        if (deletedDefaultCategoryIds.has(id)) return;
+
         const request = store.get(id);
 
         request.onsuccess = () => {
@@ -540,13 +550,15 @@ export class KnowledgeDB {
   async rebuildTaxonomy() {
     await this._ensureReady();
 
-    const [documents, existingCategories, existingTags] = await Promise.all([
+    const [documents, existingCategories, existingTags, deletedDefaultCategoryIds] = await Promise.all([
       this.getAllDocuments(),
       this.getAllCategories(),
       this.getAllTags(),
+      this.getDeletedDefaultCategoryIds(),
     ]);
     const categoryMap = new Map();
     const tagMap = new Map();
+    const deletedDefaultCategorySet = new Set(deletedDefaultCategoryIds);
     const timestamp = Date.now();
 
     existingCategories
@@ -561,6 +573,8 @@ export class KnowledgeDB {
 
     DEFAULT_CATEGORY_NAMES.forEach((categoryName) => {
       const category = createDefaultCategory(categoryName, timestamp);
+      if (deletedDefaultCategorySet.has(category.id)) return;
+
       if (!categoryMap.has(category.id)) {
         categoryMap.set(category.id, category);
       }
@@ -667,6 +681,7 @@ export class KnowledgeDB {
 
     const category = await this.getCategory(id);
     if (!category) throw new Error('Category not found');
+    const shouldRememberDeletedDefault = category.isDefault || DEFAULT_CATEGORY_NAMES.includes(category.name);
 
     await new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['documents'], 'readwrite');
@@ -691,6 +706,19 @@ export class KnowledgeDB {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error || new Error('Category could not be deleted.'));
     });
+
+    await new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['categories'], 'readwrite');
+      const store = transaction.objectStore('categories');
+      const request = store.delete(category.id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    if (shouldRememberDeletedDefault) {
+      await this.markDefaultCategoryDeleted(category.id);
+    }
 
     await this.rebuildTaxonomy();
     notifyDocumentsChanged();
@@ -808,6 +836,23 @@ export class KnowledgeDB {
       request.onsuccess = () => resolve(request.result);
       request.onerror = (error) => reject(error);
     });
+  }
+
+  async getDeletedDefaultCategoryIds() {
+    return normalizeSettingArray(await this.getSetting(DELETED_DEFAULT_CATEGORIES_SETTING));
+  }
+
+  async markDefaultCategoryDeleted(id) {
+    const deletedCategoryIds = new Set(await this.getDeletedDefaultCategoryIds());
+    deletedCategoryIds.add(id);
+    await this.setSetting(DELETED_DEFAULT_CATEGORIES_SETTING, Array.from(deletedCategoryIds));
+  }
+
+  async unmarkDefaultCategoryDeleted(id) {
+    const deletedCategoryIds = new Set(await this.getDeletedDefaultCategoryIds());
+    if (!deletedCategoryIds.delete(id)) return;
+
+    await this.setSetting(DELETED_DEFAULT_CATEGORIES_SETTING, Array.from(deletedCategoryIds));
   }
 
   // Utility methods

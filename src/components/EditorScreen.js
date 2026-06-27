@@ -222,7 +222,7 @@ function EditorScreen({ document, onBack, onSaved }) {
 
     const updates = {
       title: title.trim() || 'Untitled document',
-      content: content.trim(),
+      content,
       contentFormat: 'markdown',
       preview: createPlainPreview(content),
       category: category.trim() || 'Unfiled',
@@ -352,6 +352,40 @@ function EditorScreen({ document, onBack, onSaved }) {
     setContent(nextContent);
     refreshHistoryState();
     restoreContentSelection(nextContent.length);
+  };
+
+  const handleContentKeyDown = (event) => {
+    if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    const input = contentInput.current;
+    const selectionStart = input?.selectionStart ?? content.length;
+    const selectionEnd = input?.selectionEnd ?? selectionStart;
+    const lineStart = content.lastIndexOf('\n', Math.max(selectionStart - 1, 0)) + 1;
+    const lineEndIndex = content.indexOf('\n', selectionStart);
+    const lineEnd = lineEndIndex === -1 ? content.length : lineEndIndex;
+    const lineBeforeCursor = content.slice(lineStart, selectionStart);
+    const lineAfterCursor = content.slice(selectionEnd, lineEnd);
+    const bulletMatch = lineBeforeCursor.match(/^(\s*)([-*])\s/);
+
+    if (!bulletMatch) return;
+
+    event.preventDefault();
+
+    const [, indentation, marker] = bulletMatch;
+    const bulletPrefix = `${indentation}${marker} `;
+
+    if (lineBeforeCursor === bulletPrefix && !lineAfterCursor.trim()) {
+      const nextContent = `${content.slice(0, lineStart)}${content.slice(lineEnd)}`;
+      commitContentChange(nextContent, lineStart);
+      return;
+    }
+
+    const insertion = `\n${bulletPrefix}`;
+    const nextContent = `${content.slice(0, selectionStart)}${insertion}${content.slice(selectionEnd)}`;
+    const nextSelection = selectionStart + insertion.length;
+    commitContentChange(nextContent, nextSelection);
   };
 
   const applyFormat = (action) => {
@@ -607,6 +641,7 @@ function EditorScreen({ document, onBack, onSaved }) {
                   event.target.selectionStart,
                   event.target.selectionEnd
                 )}
+                onKeyDown={handleContentKeyDown}
                 placeholder="Start writing..."
               />
             </>
