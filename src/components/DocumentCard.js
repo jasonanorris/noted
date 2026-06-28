@@ -42,7 +42,7 @@ function renderText(value, renderer) {
 }
 
 function DocumentCard({ document = {}, highlightText, onSelect }) {
-  const title = document.title?.trim() || 'Untitled document';
+  const title = document.title?.trim() || 'Untitled note';
   const previewItems = createPreviewItems(document);
   const category = document.categoryName || document.category || 'Unfiled';
   const tags = Array.isArray(document.tags) ? document.tags.filter(Boolean).slice(0, 3) : [];
@@ -77,7 +77,7 @@ function DocumentCard({ document = {}, highlightText, onSelect }) {
       </span>
 
       {tags.length > 0 && (
-        <span className="document-card-tags" aria-label="Document tags">
+        <span className="document-card-tags" aria-label="Note tags">
           {tags.map((tag, index) => (
             <span className={`document-card-tag tag-tone-${(index % 4) + 1}`} key={tag}>
               {renderText(tag, highlightText)}

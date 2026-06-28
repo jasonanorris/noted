@@ -145,15 +145,15 @@ test.describe('responsive MVP screens', () => {
       ]);
       await expectMinimumTargetSize(page, '.floating-action');
 
-      await page.getByRole('button', { name: 'Create new document' }).click();
-      await expect(page.getByRole('heading', { name: 'New Document' })).toBeVisible();
+      await page.getByRole('button', { name: 'Create new note' }).click();
+      await expect(page.getByRole('heading', { name: 'New Note' })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expect(page.getByPlaceholder('Start writing...')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Bold' })).toBeVisible();
       await page.getByPlaceholder('Start writing...').fill('**formatted note**');
       await expect(page.getByPlaceholder('Start writing...')).toHaveValue('**formatted note**');
       await page.getByRole('button', { name: 'Preview' }).click();
-      await expect(page.getByLabel('Document preview')).toContainText('formatted note');
+      await expect(page.getByLabel('Note preview')).toContainText('formatted note');
       await expect(page.locator('strong').first()).toContainText('formatted note');
       await page.getByRole('button', { name: 'Edit' }).click();
       await expect(page.getByPlaceholder('Start writing...')).toHaveValue('**formatted note**');
@@ -200,8 +200,8 @@ test.describe('device profile coverage', () => {
         await expectNoHorizontalOverflow(page);
         await expectMinimumTargetSize(page, '.floating-action');
 
-        await page.getByRole('button', { name: 'Create new document' }).click();
-        await expect(page.getByRole('heading', { name: 'New Document' })).toBeVisible();
+        await page.getByRole('button', { name: 'Create new note' }).click();
+        await expect(page.getByRole('heading', { name: 'New Note' })).toBeVisible();
         await expectNoHorizontalOverflow(page);
         await expect(page.getByLabel('Content')).toBeVisible();
 

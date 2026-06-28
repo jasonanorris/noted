@@ -120,12 +120,12 @@ async function mockStorageEstimate(page) {
 }
 
 test.describe('main workflow regressions', () => {
-  test('creates, edits, opens, and deletes a document', async ({ page }) => {
+  test('creates, edits, opens, and deletes a note', async ({ page }) => {
     await openApp(page);
     await clearDatabase(page);
     await page.reload();
 
-    await page.getByRole('button', { name: 'Create new document' }).click();
+    await page.getByRole('button', { name: 'Create new note' }).click();
     await page.getByLabel('Title').fill('Workflow Draft');
     await page.getByRole('button', { name: 'Projects' }).click();
     await page.getByLabel('Tags').fill('workflow, draft');
@@ -138,14 +138,10 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByLabel('Content')).toHaveValue('shortcut body');
     await page.keyboard.press('Control+Y');
     await expect(page.getByLabel('Content')).toHaveValue('**shortcut body**');
-    await page.getByRole('button', { name: 'Undo' }).click();
-    await expect(page.getByLabel('Content')).toHaveValue('shortcut body');
-    await page.getByRole('button', { name: 'Redo' }).click();
-    await expect(page.getByLabel('Content')).toHaveValue('**shortcut body**');
     await page.getByLabel('Content').fill('## Workflow Heading\nFirst **workflow** body\n- saved item');
     await page.keyboard.press('Control+Shift+P');
     await expect(page.getByRole('heading', { name: 'Workflow Heading' })).toBeVisible();
-    await expect(page.getByLabel('Document preview')).toContainText('First workflow body');
+    await expect(page.getByLabel('Note preview')).toContainText('First workflow body');
     await expect(page.getByText('saved item')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByLabel('Content')).toBeVisible();
@@ -172,7 +168,7 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByRole('button', { name: /Workflow Draft Edited/ })).toHaveCount(0);
   });
 
-  test('loads recent documents from home and opens a selected card', async ({ page }) => {
+  test('loads recent notes from home and opens a selected card', async ({ page }) => {
     await openApp(page);
     await seedData(page, {
       documents: [
@@ -190,10 +186,10 @@ test.describe('main workflow regressions', () => {
 
     const firstCardTitle = await page.locator('.document-card-title').first().textContent();
     expect(firstCardTitle).toBe('Newer Home Note');
-    await expect(page.getByRole('button', { name: 'Projects, 2 documents' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Projects, 2 notes' })).toBeVisible();
 
     await page.getByRole('button', { name: /Older Home Note/ }).click();
-    await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Edit Note' })).toBeVisible();
     await expect(page.getByLabel('Title')).toHaveValue('Older Home Note');
   });
 
@@ -202,7 +198,7 @@ test.describe('main workflow regressions', () => {
     await clearDatabase(page);
     await page.reload();
 
-    await page.getByRole('button', { name: 'Create new document' }).click();
+    await page.getByRole('button', { name: 'Create new note' }).click();
     await expect(page.getByRole('button', { name: 'Media' })).toBeVisible();
     await expect(page.getByLabel('Category')).toBeVisible();
 
@@ -220,7 +216,7 @@ test.describe('main workflow regressions', () => {
     await expect.poll(async () => (await readStore(page, 'categories')).map((category) => category.name)).toContain('Ideas');
   });
 
-  test('filters search results and opens a matching document', async ({ page }) => {
+  test('filters search results and opens a matching note', async ({ page }) => {
     await openApp(page);
     await seedData(page, {
       documents: [
@@ -248,7 +244,7 @@ test.describe('main workflow regressions', () => {
     await page.reload();
 
     await page.getByRole('button', { name: 'Search', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Search documents' }).fill('workflow');
+    await page.getByRole('textbox', { name: 'Search notes' }).fill('workflow');
     await page.locator('.search-filter-grid select').first().selectOption('Projects');
     await page.locator('.search-filter-grid select').nth(1).selectOption('mvp');
 
@@ -256,7 +252,7 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByRole('button', { name: /Archived Reference/ })).toHaveCount(0);
 
     await page.getByRole('button', { name: /Searchable Workflow Note/ }).click();
-    await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Edit Note' })).toBeVisible();
     await expect(page.getByLabel('Title')).toHaveValue('Searchable Workflow Note');
   });
 
@@ -339,7 +335,7 @@ test.describe('main workflow regressions', () => {
     await clearDatabase(page);
     await page.reload();
 
-    await page.getByRole('button', { name: 'Create new document' }).click();
+    await page.getByRole('button', { name: 'Create new note' }).click();
     await page.getByLabel('Title').fill('Managed Taxonomy Note');
     await page.getByLabel('Category').fill('Projects');
     await page.getByLabel('Tags').fill('workflow, managed');
@@ -349,7 +345,7 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Back' }).click();
 
     await page.getByRole('button', { name: 'Open settings' }).click();
-    await expect(page.getByText('1 documents, 5 categories, 2 tags')).toBeVisible();
+    await expect(page.getByText('1 notes, 5 categories, 2 tags')).toBeVisible();
     await expect(page.locator('.management-list').first()).toContainText('People');
     await expect(page.locator('.management-list').first()).toContainText('Places');
     await expect(page.locator('.management-list').first()).toContainText('Things');
@@ -361,7 +357,7 @@ test.describe('main workflow regressions', () => {
     await page.getByLabel('Category name').fill('Ideas');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(page.getByText('Category added.')).toBeVisible();
-    await expect(page.getByText('1 documents, 6 categories, 2 tags')).toBeVisible();
+    await expect(page.getByText('1 notes, 6 categories, 2 tags')).toBeVisible();
     await expect(page.locator('.management-list').first()).toContainText('Ideas');
 
     await page.getByRole('button', { name: 'Add tag' }).click();
@@ -369,7 +365,7 @@ test.describe('main workflow regressions', () => {
     await page.getByLabel('Tag name').fill('review');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(page.getByText('Tag added.')).toBeVisible();
-    await expect(page.getByText('1 documents, 6 categories, 3 tags')).toBeVisible();
+    await expect(page.getByText('1 notes, 6 categories, 3 tags')).toBeVisible();
     await expect(page.locator('.management-list').nth(1)).toContainText('review');
 
     const projectRow = page.locator('.management-row').filter({ hasText: 'Projects' });
@@ -385,13 +381,13 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByText('managed')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByRole('button', { name: 'Renamed Projects, 1 documents' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Renamed Projects, 1 notes' })).toBeVisible();
     await page.getByRole('button', { name: /Managed Taxonomy Note/ }).click();
     await expect(page.getByRole('button', { name: 'Renamed Projects' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByLabel('Tags')).toHaveValue('workflow');
   });
 
-  test('imports a JSON backup and restores documents', async ({ page }) => {
+  test('imports a JSON backup and restores notes', async ({ page }) => {
     await openApp(page);
     await clearDatabase(page);
 
@@ -409,7 +405,7 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Open settings' }).click();
     await page.getByRole('button', { name: 'Import JSON' }).click();
     await page.getByLabel('Choose JSON File').setInputFiles(backupPath);
-    await expect(page.getByText('Backup restored. Your documents have been refreshed.')).toBeVisible();
+    await expect(page.getByText('Backup restored. Your notes have been refreshed.')).toBeVisible();
 
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();

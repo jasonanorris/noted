@@ -51,7 +51,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
     if (!('indexedDB' in window)) {
       setDocuments([]);
       setDocumentStatus('error');
-      setDocumentError('Local document storage is not available in this browser.');
+      setDocumentError('Local note storage is not available in this browser.');
       return;
     }
 
@@ -70,7 +70,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
       setDocuments([]);
       setCategories([]);
       setDocumentStatus('error');
-      setDocumentError(error?.message || 'Local documents could not be loaded.');
+      setDocumentError(error?.message || 'Local notes could not be loaded.');
     }
   }, []);
 
@@ -185,7 +185,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
         role={pullStatus === 'refreshing' ? 'status' : undefined}
         aria-live="polite"
       >
-        {pullStatus === 'refreshing' ? 'Refreshing documents...' : pullLabel}
+        {pullStatus === 'refreshing' ? 'Refreshing notes...' : pullLabel}
       </div>
 
       <section className="home-hero" aria-labelledby="home-title">
@@ -212,7 +212,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
         <button
           className="floating-action floating-action-primary"
           type="button"
-          aria-label="Create new document"
+          aria-label="Create new note"
           onClick={onNewDocument}
         >
           <span aria-hidden="true">+</span>
@@ -234,7 +234,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
               className={`category-chip category-chip-${createCategoryKey(area.name)} ${activeFilter === area.name ? 'is-active' : ''}`}
               type="button"
               key={area.id}
-              aria-label={`${area.name}, ${area.count || 0} documents`}
+              aria-label={`${area.name}, ${area.count || 0} notes`}
               onClick={() => setActiveFilter((currentFilter) => (
                 currentFilter === area.name ? 'All' : area.name
               ))}
@@ -244,45 +244,44 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
                 <CategoryIcon name={area.name} />
               </span>
               <span className="category-chip-name">{area.name}</span>
-              <span className="category-chip-count">{area.count || 0}</span>
             </button>
           )) : (
             <div className="document-state">
               <strong>No categories yet</strong>
-              <span>Save a document with a category to organize this list.</span>
+              <span>Save a note with a category to organize this list.</span>
             </div>
           )}
         </div>
       </section>
 
-      <section className="home-section" aria-label="Recent documents">
+      <section className="home-section" aria-label="Recent notes">
         {documentStatus === 'loading' && (
           <div className="document-state" role="status">
             <span className="spinner" aria-hidden="true"></span>
-            <span>Loading documents...</span>
+            <span>Loading notes...</span>
           </div>
         )}
 
         {documentStatus === 'error' && (
           <div className="document-state is-error" role="alert">
-            <strong>Documents could not load.</strong>
+            <strong>Notes could not load.</strong>
             <span>{documentError || 'Try refreshing the list.'}</span>
           </div>
         )}
 
         {documentStatus === 'ready' && recentDocuments.length === 0 && (
           <div className="document-state">
-            <strong>{documents.length ? 'No matching documents' : 'No documents yet'}</strong>
+            <strong>{documents.length ? 'No matching notes' : 'No notes yet'}</strong>
             <span>
               {documents.length
-                ? 'Clear the filter or create a document in this area.'
+                ? 'Clear the filter or create a note in this area.'
                 : 'Create your first note to start building your library.'}
             </span>
           </div>
         )}
 
         {documentStatus === 'ready' && recentDocuments.length > 0 && (
-          <div className="document-grid" aria-label="Recent documents">
+          <div className="document-grid" aria-label="Recent notes">
             {recentDocuments.map((document, index) => (
               <LazyDocumentCard
                 document={document}

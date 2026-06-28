@@ -378,7 +378,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
   };
 
   const deleteCategory = async (category) => {
-    const confirmed = window.confirm(`Delete "${category.name}" and move its documents to Unfiled?`);
+    const confirmed = window.confirm(`Delete "${category.name}" and move its notes to Unfiled?`);
     if (!confirmed) return;
 
     try {
@@ -412,7 +412,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
   };
 
   const deleteTag = async (tag) => {
-    const confirmed = window.confirm(`Remove "${tag.name}" from all documents?`);
+    const confirmed = window.confirm(`Remove "${tag.name}" from all notes?`);
     if (!confirmed) return;
 
     try {
@@ -446,7 +446,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
         <section className="settings-group settings-summary" aria-labelledby="local-storage-title">
           <div>
             <h2 id="local-storage-title">Local Storage</h2>
-            <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} documents, ${summary.categories} categories, ${summary.tags} tags`}</p>
+            <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} notes, ${summary.categories} categories, ${summary.tags} tags`}</p>
           </div>
         </section>
 
@@ -610,7 +610,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
                 <div className="management-row" key={category.id}>
                   <span>
                     <strong>{category.name}</strong>
-                    <small>{category.count || 0} documents</small>
+                    <small>{category.count || 0} notes</small>
                   </span>
                   <span className="management-actions">
                     <button className="text-button" type="button" onClick={() => renameCategory(category)} disabled={isBusy}>
@@ -666,7 +666,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
                 <div className="management-row" key={tag.id}>
                   <span>
                     <strong>{tag.name}</strong>
-                    <small>{tag.count || 0} documents</small>
+                    <small>{tag.count || 0} notes</small>
                   </span>
                   <span className="management-actions">
                     <button className="text-button" type="button" onClick={() => renameTag(tag)} disabled={isBusy}>

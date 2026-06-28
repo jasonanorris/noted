@@ -37,7 +37,7 @@ function ImportScreen({ onBack }) {
       await knowledgeDB.importData(backupData);
 
       setStatus('success');
-      setMessage('Backup restored. Your documents have been refreshed.');
+      setMessage('Backup restored. Your notes have been refreshed.');
     } catch (error) {
       setStatus('error');
       setMessage(error?.message || 'Backup could not be restored.');
@@ -58,7 +58,7 @@ function ImportScreen({ onBack }) {
       <section className="utility-panel" aria-label="Import backup">
         <div>
           <h2>Restore JSON Backup</h2>
-          <p>Select a Noted backup file to replace the local documents, categories, tags, and settings.</p>
+          <p>Select a Noted backup file to replace the local notes, categories, tags, and settings.</p>
         </div>
 
         <label className={`file-picker ${isWorking ? 'is-disabled' : ''}`} htmlFor="backup-file">

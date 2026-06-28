@@ -172,7 +172,6 @@ function EditorScreen({ document, onBack, onSaved }) {
   const contentInput = useRef(null);
   const undoStack = useRef([]);
   const redoStack = useRef([]);
-  const [historyState, setHistoryState] = useState({ undo: 0, redo: 0 });
 
   useEffect(() => {
     setCurrentDocument(document || null);
@@ -190,7 +189,6 @@ function EditorScreen({ document, onBack, onSaved }) {
     }
     undoStack.current = [];
     redoStack.current = [];
-    setHistoryState({ undo: 0, redo: 0 });
   }, [document]);
 
   useEffect(() => {
@@ -268,7 +266,7 @@ function EditorScreen({ document, onBack, onSaved }) {
     }
 
     const updates = {
-      title: title.trim() || 'Untitled document',
+      title: title.trim() || 'Untitled note',
       content,
       contentFormat: 'markdown',
       preview: createPlainPreview(content),
@@ -304,7 +302,7 @@ function EditorScreen({ document, onBack, onSaved }) {
       }
     } catch (saveError) {
       setStatus('error');
-      setError(saveError?.message || 'Document could not be saved.');
+      setError(saveError?.message || 'Note could not be saved.');
       return null;
     }
   }, [canSave, category, content, currentDocument, finishSavingStatus, onSaved, status, tagText, title]);
@@ -319,13 +317,6 @@ function EditorScreen({ document, onBack, onSaved }) {
   const selectCategory = (categoryName) => {
     const nextCategory = category.trim() === categoryName ? '' : categoryName;
     markEdited(setCategory)(nextCategory);
-  };
-
-  const refreshHistoryState = () => {
-    setHistoryState({
-      undo: undoStack.current.length,
-      redo: redoStack.current.length,
-    });
   };
 
   const restoreContentSelection = (selectionStart, selectionEnd = selectionStart) => {
@@ -353,7 +344,6 @@ function EditorScreen({ document, onBack, onSaved }) {
     undoStack.current = [...undoStack.current, content].slice(-HISTORY_LIMIT);
     redoStack.current = [];
     setContent(nextContent);
-    refreshHistoryState();
     restoreContentSelection(selectionStart, selectionEnd);
   };
 
@@ -364,7 +354,6 @@ function EditorScreen({ document, onBack, onSaved }) {
     setEditedState();
     redoStack.current = [...redoStack.current, content].slice(-HISTORY_LIMIT);
     setContent(previousContent);
-    refreshHistoryState();
     restoreContentSelection(previousContent.length);
   };
 
@@ -375,7 +364,6 @@ function EditorScreen({ document, onBack, onSaved }) {
     setEditedState();
     undoStack.current = [...undoStack.current, content].slice(-HISTORY_LIMIT);
     setContent(nextContent);
-    refreshHistoryState();
     restoreContentSelection(nextContent.length);
   };
 
@@ -502,7 +490,7 @@ function EditorScreen({ document, onBack, onSaved }) {
 
   const handleDelete = async () => {
     if (!currentDocument?.id) return;
-    const confirmed = window.confirm('Delete this document? This cannot be undone.');
+    const confirmed = window.confirm('Delete this note? This cannot be undone.');
     if (!confirmed) return;
 
     try {
@@ -513,7 +501,7 @@ function EditorScreen({ document, onBack, onSaved }) {
       onBack();
     } catch (deleteError) {
       setStatus('error');
-      setError(deleteError?.message || 'Document could not be deleted.');
+      setError(deleteError?.message || 'Note could not be deleted.');
     }
   };
 
@@ -616,17 +604,17 @@ function EditorScreen({ document, onBack, onSaved }) {
         <button className="text-button" type="button" onClick={onBack}>
           Back
         </button>
-        <h1 ref={headingRef} tabIndex="-1">{document?.id ? 'Edit Document' : 'New Document'}</h1>
+        <h1 ref={headingRef} tabIndex="-1">{document?.id ? 'Edit Note' : 'New Note'}</h1>
       </header>
 
-      <section className="editor-shell" aria-label="Document editor">
+      <section className="editor-shell" aria-label="Note editor">
         <label className="field editor-title-field">
           <span className="sr-only">Title</span>
           <input
             className="input editor-title-input"
             value={title}
             onChange={(event) => markEdited(setTitle)(event.target.value)}
-            placeholder="Untitled document"
+            placeholder="Untitled note"
           />
         </label>
         <button
@@ -638,48 +626,6 @@ function EditorScreen({ document, onBack, onSaved }) {
         >
           Save
         </button>
-
-        <section className="editor-meta-panel" aria-label="Document details">
-          <div className="field">
-            <span id="editor-category-label">Category</span>
-            {categoryOptions.length > 0 && (
-              <div className="category-choice-list" aria-label="Existing categories">
-                {categoryOptions.map((option) => (
-                  <button
-                    className={`category-choice ${category.trim() === option.name ? 'is-active' : ''}`}
-                    type="button"
-                    key={option.id}
-                    onClick={() => selectCategory(option.name)}
-                    aria-pressed={category.trim() === option.name}
-                  >
-                    {option.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            {!selectedExistingCategory && (
-              <label className="category-custom-field">
-                <span className="sr-only">Category</span>
-                <input
-                  className="input"
-                  value={category}
-                  onChange={(event) => markEdited(setCategory)(event.target.value)}
-                  placeholder="New category"
-                />
-              </label>
-            )}
-          </div>
-
-          <label className="field">
-            <span>Tags</span>
-            <input
-              className="input"
-              value={tagText}
-              onChange={(event) => markEdited(setTagText)(event.target.value)}
-              placeholder="ideas, project, reference"
-            />
-          </label>
-        </section>
 
         <div className="field editor-content-field">
           <div className="editor-content-heading">
@@ -719,26 +665,6 @@ function EditorScreen({ document, onBack, onSaved }) {
           {editorMode === 'edit' ? (
             <>
               <div className="format-toolbar" aria-label="Formatting controls">
-                <button
-                  className="format-button"
-                  type="button"
-                  onClick={undoContentChange}
-                  disabled={!historyState.undo}
-                  title="Undo (Ctrl/Cmd+Z)"
-                  aria-keyshortcuts="Control+Z Meta+Z"
-                >
-                  Undo
-                </button>
-                <button
-                  className="format-button"
-                  type="button"
-                  onClick={redoContentChange}
-                  disabled={!historyState.redo}
-                  title="Redo (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)"
-                  aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y Meta+Y"
-                >
-                  Redo
-                </button>
                 {formatActions.map((action) => (
                   <button
                     className="format-button"
@@ -804,7 +730,7 @@ function EditorScreen({ document, onBack, onSaved }) {
               </button>
             </div>
           ) : (
-            <div className="editor-preview" aria-label="Document preview">
+            <div className="editor-preview" aria-label="Note preview">
               {previewBlocks.length ? previewBlocks : (
                 <div className="document-state">
                   <strong>No preview yet</strong>
@@ -814,6 +740,48 @@ function EditorScreen({ document, onBack, onSaved }) {
             </div>
           )}
         </div>
+
+        <section className="editor-meta-panel" aria-label="Note details">
+          <div className="field">
+            <span id="editor-category-label">Category</span>
+            {categoryOptions.length > 0 && (
+              <div className="category-choice-list" aria-label="Existing categories">
+                {categoryOptions.map((option) => (
+                  <button
+                    className={`category-choice ${category.trim() === option.name ? 'is-active' : ''}`}
+                    type="button"
+                    key={option.id}
+                    onClick={() => selectCategory(option.name)}
+                    aria-pressed={category.trim() === option.name}
+                  >
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {!selectedExistingCategory && (
+              <label className="category-custom-field">
+                <span className="sr-only">Category</span>
+                <input
+                  className="input"
+                  value={category}
+                  onChange={(event) => markEdited(setCategory)(event.target.value)}
+                  placeholder="New category"
+                />
+              </label>
+            )}
+          </div>
+
+          <label className="field">
+            <span>Tags</span>
+            <input
+              className="input"
+              value={tagText}
+              onChange={(event) => markEdited(setTagText)(event.target.value)}
+              placeholder="ideas, project, reference"
+            />
+          </label>
+        </section>
 
         {error && (
           <p className="form-status is-error" role="alert">

@@ -70,7 +70,7 @@ test.describe('offline PWA behavior', () => {
     await context.setOffline(false);
   });
 
-  test('loads cached app shell and local documents while offline', async ({ page, context }) => {
+  test('loads cached app shell and local notes while offline', async ({ page, context }) => {
     await page.goto('http://localhost:3000/noted/');
     await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
     await seedOfflineData(page);
@@ -84,15 +84,15 @@ test.describe('offline PWA behavior', () => {
 
     await expect(page.getByRole('heading', { name: 'Noted' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Offline Field Note/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Field Work, 1 documents' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Field Work, 1 notes' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
-    await page.getByRole('textbox', { name: 'Search documents' }).fill('offline');
+    await page.getByRole('textbox', { name: 'Search notes' }).fill('offline');
     await expect(page.getByRole('button', { name: /Offline Field Note/ })).toBeVisible();
 
     await page.getByRole('button', { name: /Offline Field Note/ }).click();
-    await expect(page.getByRole('heading', { name: 'Edit Document' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Edit Note' })).toBeVisible();
     await expect(page.getByLabel('Title')).toHaveValue('Offline Field Note');
     await page.getByRole('button', { name: 'Preview' }).click();
     await expect(page.getByRole('heading', { name: 'Offline Heading' })).toBeVisible();
@@ -100,6 +100,6 @@ test.describe('offline PWA behavior', () => {
     await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Open settings' }).click();
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-    await expect(page.getByText('1 documents, 6 categories, 1 tags')).toBeVisible();
+    await expect(page.getByText('1 notes, 6 categories, 1 tags')).toBeVisible();
   });
 });

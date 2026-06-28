@@ -17,7 +17,7 @@ const THEME_STORAGE_KEY = 'noted:theme';
 
 const viewTitles = {
   home: 'Knowledge Storage',
-  editor: 'Document Editor',
+  editor: 'Note Editor',
   search: 'Search',
   import: 'Import',
   settings: 'Settings',

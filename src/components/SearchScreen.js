@@ -127,10 +127,10 @@ function SearchScreen({ onBack, onOpenDocument }) {
         <h1 ref={headingRef} tabIndex="-1">Search</h1>
       </header>
 
-      <section className="search-shell" aria-label="Search documents">
+      <section className="search-shell" aria-label="Search notes">
         <section className="search-panel" aria-label="Search controls">
           <label className="field search-query-field">
-            <span>Search documents</span>
+            <span>Search notes</span>
             <span className="search-input-wrap">
               <span className="search-input-icon" aria-hidden="true"></span>
               <input
@@ -196,7 +196,7 @@ function SearchScreen({ onBack, onOpenDocument }) {
         {status === 'loading' && (
           <div className="document-state" role="status">
             <span className="spinner" aria-hidden="true"></span>
-            <span>Loading documents...</span>
+            <span>Loading notes...</span>
           </div>
         )}
 
@@ -213,7 +213,7 @@ function SearchScreen({ onBack, onOpenDocument }) {
             <span>
               {documents.length
                 ? 'Try another search or clear the filters.'
-                : 'Create a document first.'}
+                : 'Create a note first.'}
             </span>
           </div>
         )}

@@ -52,10 +52,10 @@ test.describe('screen accessibility', () => {
     await expectVisibleFocus(page);
 
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'Create new document' })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Create new note' })).toBeFocused();
     await page.keyboard.press('Enter');
 
-    await expectFocusedHeading(page, 'New Document');
+    await expectFocusedHeading(page, 'New Note');
     await expect(page.getByLabel('Title')).toBeVisible();
     await expect(page.getByLabel('Category')).toBeVisible();
     await expect(page.getByLabel('Tags')).toBeVisible();
@@ -74,7 +74,7 @@ test.describe('screen accessibility', () => {
 
     await page.getByRole('button', { name: 'Search' }).click();
     await expectFocusedHeading(page, 'Search');
-    await expect(page.getByRole('textbox', { name: 'Search documents' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Search notes' })).toBeVisible();
     await expect(page.locator('.search-filter-grid').getByLabel('Category')).toBeVisible();
     await expect(page.locator('.search-filter-grid').getByLabel('Tag')).toBeVisible();
 
