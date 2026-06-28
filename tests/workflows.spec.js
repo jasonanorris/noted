@@ -154,6 +154,8 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByRole('button', { name: /Workflow Draft/ })).toBeVisible();
 
     await page.getByRole('button', { name: /Workflow Draft/ }).click();
+    await expect(page.getByRole('dialog')).toContainText('Workflow Draft');
+    await page.getByRole('dialog').getByRole('button', { name: 'Edit' }).click();
     await page.getByLabel('Title').fill('Workflow Draft Edited');
     await page.getByLabel('Content').fill('Edited workflow body');
     await page.getByRole('button', { name: 'Save' }).click();
@@ -161,6 +163,7 @@ test.describe('main workflow regressions', () => {
 
     await expect(page.getByRole('button', { name: /Workflow Draft Edited/ })).toBeVisible();
     await page.getByRole('button', { name: /Workflow Draft Edited/ }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Edit' }).click();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Delete' }).click();
 
@@ -189,6 +192,8 @@ test.describe('main workflow regressions', () => {
     await expect(page.getByRole('button', { name: 'Projects, 2 notes' })).toBeVisible();
 
     await page.getByRole('button', { name: /Older Home Note/ }).click();
+    await expect(page.getByRole('dialog')).toContainText('Older Home Note');
+    await page.getByRole('dialog').getByRole('button', { name: 'Edit' }).click();
     await expect(page.getByRole('heading', { name: 'Edit Note' })).toBeVisible();
     await expect(page.getByLabel('Title')).toHaveValue('Older Home Note');
   });
@@ -386,6 +391,7 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page.getByRole('button', { name: 'Renamed Projects, 1 notes' })).toBeVisible();
     await page.getByRole('button', { name: /Managed Taxonomy Note/ }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Edit' }).click();
     await expect(page.getByRole('button', { name: 'Renamed Projects' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByLabel('Tags')).toHaveValue('workflow');
   });

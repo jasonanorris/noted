@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, BriefcaseBusiness, Image, MapPin, UsersRound } from 'lucide-react';
 import LazyDocumentCard from './LazyDocumentCard';
 import { knowledgeDB } from '../db';
+import { createPlainPreview } from '../textFormatting';
 import useScreenFocus from '../hooks/useScreenFocus';
 
 const PULL_TO_REFRESH_THRESHOLD = 64;
@@ -36,6 +37,52 @@ function getDocumentTime(document) {
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
+function renderModalContent(value = '', onToggleTask) {
+  const lines = String(value).split('\n');
+
+  return lines.map((line, index) => {
+    const trimmedLine = line.trim();
+    const taskMatch = trimmedLine.match(/^[-*]\s+\[([ xX])\]\s?(.*)$/);
+    const bulletMatch = trimmedLine.match(/^[-*]\s+(.*)$/);
+
+    if (!trimmedLine) {
+      return <span className="note-modal-blank-line" aria-hidden="true" key={`blank-${index}`}></span>;
+    }
+
+    if (trimmedLine.startsWith('## ')) {
+      return <h3 key={`${trimmedLine}-${index}`}>{trimmedLine.slice(3)}</h3>;
+    }
+
+    if (trimmedLine.startsWith('# ')) {
+      return <h3 key={`${trimmedLine}-${index}`}>{trimmedLine.slice(2)}</h3>;
+    }
+
+    if (taskMatch) {
+      const isChecked = taskMatch[1].toLowerCase() === 'x';
+
+      return (
+        <div className="note-modal-task" key={`${trimmedLine}-${index}`}>
+          <button
+            className={`document-card-task-box note-modal-task-button ${isChecked ? 'is-checked' : ''}`}
+            type="button"
+            aria-label={`${isChecked ? 'Mark incomplete' : 'Mark complete'}: ${taskMatch[2] || `item ${index + 1}`}`}
+            onClick={() => onToggleTask(index)}
+          >
+            {isChecked ? '✓' : ''}
+          </button>
+          <span>{taskMatch[2]}</span>
+        </div>
+      );
+    }
+
+    if (bulletMatch) {
+      return <p className="note-modal-bullet" key={`${trimmedLine}-${index}`}>{bulletMatch[1]}</p>;
+    }
+
+    return <p key={`${trimmedLine}-${index}`}>{trimmedLine}</p>;
+  });
+}
+
 function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
   const headingRef = useScreenFocus();
   const [activeFilter, setActiveFilter] = useState('All');
@@ -43,6 +90,7 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
   const [categories, setCategories] = useState([]);
   const [documentStatus, setDocumentStatus] = useState('loading');
   const [documentError, setDocumentError] = useState('');
+  const [selectedNote, setSelectedNote] = useState(null);
   const [pullDistance, setPullDistance] = useState(0);
   const [pullStatus, setPullStatus] = useState('idle');
   const touchStartY = useRef(null);
@@ -120,6 +168,19 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
     }
   }, [activeFilter, categoryAreas]);
 
+  useEffect(() => {
+    if (!selectedNote) return undefined;
+
+    const handleModalKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedNote(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleModalKeyDown);
+    return () => window.removeEventListener('keydown', handleModalKeyDown);
+  }, [selectedNote]);
+
   const handleTouchStart = (event) => {
     if (window.scrollY > 0 || documentStatus === 'loading') {
       touchStartY.current = null;
@@ -168,6 +229,37 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
   };
 
   const pullLabel = pullStatus === 'ready' ? 'Release to refresh' : 'Pull to refresh';
+  const selectedNoteTitle = selectedNote?.title?.trim() || 'Untitled note';
+  const selectedNoteContent = selectedNote?.content || selectedNote?.preview || '';
+
+  const toggleSelectedNoteTask = async (lineIndex) => {
+    if (!selectedNote?.id) return;
+
+    const content = selectedNote.content || '';
+    const lines = content.split('\n');
+    const line = lines[lineIndex] || '';
+    const taskMatch = line.match(/^(\s*[-*]\s+\[)([ xX])(\]\s?.*)$/);
+
+    if (!taskMatch) return;
+
+    const nextMarker = taskMatch[2].toLowerCase() === 'x' ? ' ' : 'x';
+    lines[lineIndex] = `${taskMatch[1]}${nextMarker}${taskMatch[3]}`;
+    const nextContent = lines.join('\n');
+    const updates = {
+      content: nextContent,
+      preview: createPlainPreview(nextContent),
+    };
+
+    try {
+      const updatedNote = await knowledgeDB.updateDocument(selectedNote.id, updates);
+      setSelectedNote(updatedNote);
+      setDocuments((currentDocuments) => currentDocuments.map((document) => (
+        document.id === updatedNote.id ? updatedNote : document
+      )));
+    } catch (error) {
+      setDocumentError(error?.message || 'Checklist item could not be updated.');
+    }
+  };
 
   return (
     <main
@@ -287,12 +379,49 @@ function HomeScreen({ onNavigate, onNewDocument, onOpenDocument }) {
                 document={document}
                 eager={index < 6}
                 key={document.id}
-                onSelect={onOpenDocument}
+                onSelect={setSelectedNote}
               />
             ))}
           </div>
         )}
       </section>
+
+      {selectedNote && (
+        <div className="note-modal-backdrop" role="presentation" onMouseDown={() => setSelectedNote(null)}>
+          <section
+            className="note-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="note-modal-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header className="note-modal-header">
+              <h2 id="note-modal-title">{selectedNoteTitle}</h2>
+              <button className="text-button" type="button" onClick={() => setSelectedNote(null)}>
+                Close
+              </button>
+            </header>
+            <div className="note-modal-content">
+              {selectedNoteContent.trim() ? renderModalContent(selectedNoteContent, toggleSelectedNoteTask) : (
+                <p className="note-modal-empty">No content yet.</p>
+              )}
+            </div>
+            <footer className="note-modal-actions">
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => {
+                  const noteToEdit = selectedNote;
+                  setSelectedNote(null);
+                  onOpenDocument(noteToEdit);
+                }}
+              >
+                Edit
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

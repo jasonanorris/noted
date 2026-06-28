@@ -6,7 +6,7 @@ function createPreviewItems(document) {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
-  const items = lines
+  const parsedItems = lines
     .map((line) => {
       const taskMatch = line.match(/^[-*]\s+\[([ xX])\]\s?(.*)$/);
       const bulletMatch = line.match(/^[-*]\s+(.+)/);
@@ -31,10 +31,14 @@ function createPreviewItems(document) {
         type: 'text',
       };
     })
-    .filter((item) => item.text)
-    .slice(0, 3);
+    .filter((item) => item.text);
 
-  return items.length ? items : [{ text: createPlainPreview(source), type: 'text' }];
+  const items = parsedItems.length ? parsedItems : [{ text: createPlainPreview(source), type: 'text' }];
+
+  return {
+    items: items.slice(0, 3),
+    isTruncated: items.length > 3,
+  };
 }
 
 function renderText(value, renderer) {
@@ -43,7 +47,7 @@ function renderText(value, renderer) {
 
 function DocumentCard({ document = {}, highlightText, onSelect }) {
   const title = document.title?.trim() || 'Untitled note';
-  const previewItems = createPreviewItems(document);
+  const { items: previewItems, isTruncated } = createPreviewItems(document);
   const category = document.categoryName || document.category || 'Unfiled';
   const tags = Array.isArray(document.tags) ? document.tags.filter(Boolean).slice(0, 3) : [];
 
@@ -74,6 +78,11 @@ function DocumentCard({ document = {}, highlightText, onSelect }) {
             {renderText(item.text, highlightText)}
           </span>
         ))}
+        {isTruncated && (
+          <span className="document-card-preview-line document-card-preview-more" aria-label="More note content">
+            ...
+          </span>
+        )}
       </span>
 
       {tags.length > 0 && (
