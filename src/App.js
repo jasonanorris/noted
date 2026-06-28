@@ -9,10 +9,11 @@ function lazyWithPreload(importer) {
 }
 
 const EditorScreen = lazyWithPreload(() => import('./components/EditorScreen'));
+const DebugScreen = lazyWithPreload(() => import('./components/DebugScreen'));
 const ImportScreen = lazyWithPreload(() => import('./components/ImportScreen'));
 const SearchScreen = lazyWithPreload(() => import('./components/SearchScreen'));
 const SettingsScreen = lazyWithPreload(() => import('./components/SettingsScreen'));
-const deferredScreens = [EditorScreen, ImportScreen, SearchScreen, SettingsScreen];
+const deferredScreens = [EditorScreen, DebugScreen, ImportScreen, SearchScreen, SettingsScreen];
 const THEME_STORAGE_KEY = 'noted:theme';
 
 const viewTitles = {
@@ -21,6 +22,7 @@ const viewTitles = {
   search: 'Search',
   import: 'Import',
   settings: 'Settings',
+  debug: 'Debug',
 };
 
 function getInitialView() {
@@ -215,9 +217,14 @@ function App() {
       return <ImportScreen onBack={() => navigate('settings')} />;
     }
 
+    if (activeView === 'debug') {
+      return <DebugScreen onBack={() => navigate('settings')} />;
+    }
+
     return (
       <SettingsScreen
         onBack={() => navigate('home')}
+        onDebug={() => navigate('debug')}
         onImport={() => navigate('import')}
         theme={theme}
         onThemeChange={setTheme}

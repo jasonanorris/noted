@@ -84,7 +84,11 @@ test.describe('screen accessibility', () => {
     await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Import JSON' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Clear Local Data' })).toBeVisible();
+    await page.getByRole('button', { name: 'Debug' }).click();
+    await expectFocusedHeading(page, 'Debug');
+    await expect(page.getByRole('heading', { name: 'Performance' })).toBeVisible();
 
+    await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Import JSON' }).click();
     await expectFocusedHeading(page, 'Import');
     await expect(page.getByLabel('Choose JSON File')).toBeVisible();

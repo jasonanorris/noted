@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react';
 import { knowledgeDB } from '../db';
-import {
-  formatPerformanceMetric,
-  getPerformanceMetrics,
-  summarizePerformanceMetrics,
-} from '../performanceMonitoring';
 import useScreenFocus from '../hooks/useScreenFocus';
 
 const STORAGE_ESTIMATE_CACHE_KEY = 'noted:storage-estimate';
@@ -134,7 +129,7 @@ function estimateStorageWithTimeout() {
   });
 }
 
-function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
+function SettingsScreen({ onBack, onImport, onDebug, theme = 'light', onThemeChange }) {
   const headingRef = useScreenFocus();
   const [summary, setSummary] = useState({ documents: 0, categories: 0, tags: 0 });
   const [categories, setCategories] = useState([]);
@@ -146,9 +141,10 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
-  const [performanceMetrics, setPerformanceMetrics] = useState(() => summarizePerformanceMetrics());
   const [storageEstimate, setStorageEstimate] = useState(createInitialStorageEstimate);
   const [lastExportedAt, setLastExportedAt] = useState(readLastExportedAt);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState('');
 
   const loadSummary = async ({ mounted = true } = {}) => {
     try {
@@ -189,15 +185,6 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const refreshPerformanceMetrics = () => {
-      setPerformanceMetrics(summarizePerformanceMetrics(getPerformanceMetrics()));
-    };
-
-    window.addEventListener('performance:metric', refreshPerformanceMetrics);
-    return () => window.removeEventListener('performance:metric', refreshPerformanceMetrics);
   }, []);
 
   useEffect(() => {
@@ -369,6 +356,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
       setMessage('Renaming category...');
       await knowledgeDB.renameCategory(category.id, nextName);
       await loadSummary();
+      setSelectedCategoryId(category.id);
       setStatus('success');
       setMessage('Category renamed.');
     } catch (error) {
@@ -386,6 +374,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
       setMessage('Deleting category...');
       await knowledgeDB.deleteCategory(category.id);
       await loadSummary();
+      setSelectedCategoryId('');
       setStatus('success');
       setMessage('Category deleted.');
     } catch (error) {
@@ -403,6 +392,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
       setMessage('Renaming tag...');
       await knowledgeDB.renameTag(tag.id, nextName);
       await loadSummary();
+      setSelectedTagId(tag.id);
       setStatus('success');
       setMessage('Tag renamed.');
     } catch (error) {
@@ -420,6 +410,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
       setMessage('Deleting tag...');
       await knowledgeDB.deleteTag(tag.id);
       await loadSummary();
+      setSelectedTagId('');
       setStatus('success');
       setMessage('Tag deleted.');
     } catch (error) {
@@ -443,65 +434,60 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
       </header>
 
       <section className="utility-panel settings-panel" aria-label="App settings">
-        <section className="settings-group settings-summary" aria-labelledby="local-storage-title">
-          <div>
-            <h2 id="local-storage-title">Local Storage</h2>
-            <p>{isLoading ? 'Loading storage summary...' : `${summary.documents} notes, ${summary.categories} categories, ${summary.tags} tags`}</p>
-          </div>
-        </section>
-
-        <section className="settings-group" aria-labelledby="appearance-title">
-          <div className="settings-row-header">
-            <div>
-              <h2 id="appearance-title">Appearance</h2>
-              <p>Choose the app color mode for this browser.</p>
+        <section className="settings-group information-section" aria-labelledby="information-title">
+          <h2 id="information-title">Information</h2>
+          <div className="management-list">
+            <div className="management-row">
+              <span>
+                <strong>Local Storage</strong>
+                <small>{isLoading ? 'Loading storage summary...' : `${summary.documents} notes, ${summary.categories} categories, ${summary.tags} tags`}</small>
+              </span>
             </div>
-          </div>
-          <div className="theme-toggle" role="group" aria-label="Color mode">
-            <button
-              className={`segmented-button ${theme === 'light' ? 'is-active' : ''}`}
-              type="button"
-              onClick={() => onThemeChange?.('light')}
-              aria-pressed={theme === 'light'}
-            >
-              Light
-            </button>
-            <button
-              className={`segmented-button ${theme === 'dark' ? 'is-active' : ''}`}
-              type="button"
-              onClick={() => onThemeChange?.('dark')}
-              aria-pressed={theme === 'dark'}
-            >
-              Dark
-            </button>
-          </div>
-        </section>
-
-        <section className="settings-group" aria-labelledby="storage-usage-title">
-          <h2 id="storage-usage-title">Storage Usage</h2>
-          {storageEstimate.status === 'loading' && (
-            <div className="document-state" role="status">
-              <span className="spinner" aria-hidden="true"></span>
-              <span>Estimating storage...</span>
-            </div>
-          )}
-          {storageEstimate.status === 'ready' && (
-            <>
-              <div className="management-row">
-                <span>
-                  <strong>{formatStorageSize(storageEstimate.usage)} used</strong>
-                  <small>{formatStorageSize(storageEstimate.quota)} available to this browser profile</small>
-                </span>
-                {Number.isFinite(storageEstimate.usage) && Number.isFinite(storageEstimate.quota) && storageEstimate.quota > 0 && (
-                  <span>{Math.round((storageEstimate.usage / storageEstimate.quota) * 100)}%</span>
-                )}
+            <div className="management-row theme-info-row">
+              <span>
+                <strong>Theme</strong>
+              </span>
+              <div className="theme-toggle" role="group" aria-label="Color mode">
+                <button
+                  className={`segmented-button ${theme === 'light' ? 'is-active' : ''}`}
+                  type="button"
+                  onClick={() => onThemeChange?.('light')}
+                  aria-pressed={theme === 'light'}
+                >
+                  Light
+                </button>
+                <button
+                  className={`segmented-button ${theme === 'dark' ? 'is-active' : ''}`}
+                  type="button"
+                  onClick={() => onThemeChange?.('dark')}
+                  aria-pressed={theme === 'dark'}
+                >
+                  Dark
+                </button>
               </div>
-              {storageEstimate.message && (
-                <p>{storageEstimate.message}</p>
+            </div>
+            <div className="management-row">
+              <span>
+                <strong>Storage Usage</strong>
+                {storageEstimate.status === 'loading' && (
+                  <small>Estimating storage...</small>
+                )}
+                {storageEstimate.status === 'ready' && (
+                  <small>{formatStorageSize(storageEstimate.usage)} used of {formatStorageSize(storageEstimate.quota)}</small>
+                )}
+                {storageEstimate.status === 'unavailable' && (
+                  <small>{storageEstimate.message}</small>
+                )}
+              </span>
+              {storageEstimate.status === 'ready'
+                && Number.isFinite(storageEstimate.usage)
+                && Number.isFinite(storageEstimate.quota)
+                && storageEstimate.quota > 0 && (
+                  <span>{Math.round((storageEstimate.usage / storageEstimate.quota) * 100)}%</span>
               )}
-            </>
-          )}
-          {storageEstimate.status === 'unavailable' && (
+            </div>
+          </div>
+          {storageEstimate.status === 'ready' && storageEstimate.message && (
             <p>{storageEstimate.message}</p>
           )}
         </section>
@@ -520,6 +506,10 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
           </div>
         )}
 
+        <button className="btn btn-primary settings-debug-link" type="button" onClick={onDebug}>
+          Debug
+        </button>
+
         <section className="settings-group backup-section" aria-labelledby="backup-guidance-title">
           <h2 id="backup-guidance-title">Back Up Local Notes</h2>
           <p>
@@ -534,11 +524,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
               disabled={isBusy}
               aria-label={isWorking ? 'Working' : 'Export JSON'}
             >
-              <span className="settings-action-icon" aria-hidden="true">↓</span>
-              <span>
-                <strong>{isWorking ? 'Working...' : 'Export JSON'}</strong>
-                <small>Download a local backup</small>
-              </span>
+              {isWorking ? 'Working...' : 'Export'}
             </button>
             <button
               className="settings-action-row"
@@ -547,11 +533,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
               disabled={isBusy}
               aria-label="Import JSON"
             >
-              <span className="settings-action-icon" aria-hidden="true">↑</span>
-              <span>
-                <strong>Import JSON</strong>
-                <small>Restore from a backup file</small>
-              </span>
+              Import
             </button>
             <button
               className="settings-action-row is-danger"
@@ -560,11 +542,7 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
               disabled={isBusy}
               aria-label="Clear Local Data"
             >
-              <span className="settings-action-icon" aria-hidden="true">!</span>
-              <span>
-                <strong>Clear Local Data</strong>
-                <small>Remove notes from this browser</small>
-              </span>
+              Clear
             </button>
             <p className="last-exported">Last Exported {formatExportDate(lastExportedAt)}</p>
           </div>
@@ -607,19 +585,34 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
             )}
             <div className="management-list">
               {categories.length ? categories.map((category) => (
-                <div className="management-row" key={category.id}>
+                <div
+                  className={`management-row management-select-row ${selectedCategoryId === category.id ? 'is-selected' : ''}`}
+                  key={category.id}
+                  role="button"
+                  tabIndex="0"
+                  onClick={() => setSelectedCategoryId((currentId) => (currentId === category.id ? '' : category.id))}
+                  onKeyDown={(event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    setSelectedCategoryId((currentId) => (currentId === category.id ? '' : category.id));
+                  }}
+                  aria-expanded={selectedCategoryId === category.id}
+                >
                   <span>
                     <strong>{category.name}</strong>
                     <small>{category.count || 0} notes</small>
                   </span>
-                  <span className="management-actions">
-                    <button className="text-button" type="button" onClick={() => renameCategory(category)} disabled={isBusy}>
-                      Rename
-                    </button>
-                    <button className="text-button is-danger" type="button" onClick={() => deleteCategory(category)} disabled={isBusy}>
-                      Delete
-                    </button>
-                  </span>
+                  {selectedCategoryId === category.id && (
+                    <span className="management-actions">
+                      <button className="text-button" type="button" onClick={(event) => { event.stopPropagation(); renameCategory(category); }} disabled={isBusy}>
+                        Rename
+                      </button>
+                      <button className="text-button is-danger" type="button" onClick={(event) => { event.stopPropagation(); deleteCategory(category); }} disabled={isBusy}>
+                        Delete
+                      </button>
+                    </span>
+                  )}
                 </div>
               )) : (
                 <p>No categories yet.</p>
@@ -663,19 +656,34 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
             )}
             <div className="management-list">
               {tags.length ? tags.map((tag) => (
-                <div className="management-row" key={tag.id}>
+                <div
+                  className={`management-row management-select-row ${selectedTagId === tag.id ? 'is-selected' : ''}`}
+                  key={tag.id}
+                  role="button"
+                  tabIndex="0"
+                  onClick={() => setSelectedTagId((currentId) => (currentId === tag.id ? '' : tag.id))}
+                  onKeyDown={(event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    setSelectedTagId((currentId) => (currentId === tag.id ? '' : tag.id));
+                  }}
+                  aria-expanded={selectedTagId === tag.id}
+                >
                   <span>
                     <strong>{tag.name}</strong>
                     <small>{tag.count || 0} notes</small>
                   </span>
-                  <span className="management-actions">
-                    <button className="text-button" type="button" onClick={() => renameTag(tag)} disabled={isBusy}>
-                      Rename
-                    </button>
-                    <button className="text-button is-danger" type="button" onClick={() => deleteTag(tag)} disabled={isBusy}>
-                      Delete
-                    </button>
-                  </span>
+                  {selectedTagId === tag.id && (
+                    <span className="management-actions">
+                      <button className="text-button" type="button" onClick={(event) => { event.stopPropagation(); renameTag(tag); }} disabled={isBusy}>
+                        Rename
+                      </button>
+                      <button className="text-button is-danger" type="button" onClick={(event) => { event.stopPropagation(); deleteTag(tag); }} disabled={isBusy}>
+                        Delete
+                      </button>
+                    </span>
+                  )}
                 </div>
               )) : (
                 <p>No tags yet.</p>
@@ -683,25 +691,6 @@ function SettingsScreen({ onBack, onImport, theme = 'light', onThemeChange }) {
             </div>
           </section>
         </div>
-
-        <section className="settings-group" aria-labelledby="performance-monitoring-title">
-          <h2 id="performance-monitoring-title">Performance</h2>
-          {performanceMetrics.length ? (
-            <div className="management-list">
-              {performanceMetrics.map((metric) => (
-                <div className="management-row" key={metric.name}>
-                  <span>
-                    <strong>{metric.name}</strong>
-                    <small>{metric.rating}</small>
-                  </span>
-                  <span>{formatPerformanceMetric(metric)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No performance metrics yet.</p>
-          )}
-        </section>
 
         {message && !hasLoadError && (
           <p className={`form-status ${status === 'error' ? 'is-error' : ''}`} role={status === 'error' ? 'alert' : 'status'}>

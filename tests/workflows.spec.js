@@ -268,9 +268,8 @@ test.describe('main workflow regressions', () => {
     await page.reload();
 
     await page.getByRole('button', { name: 'Open settings' }).click();
-    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
-    await expect(page.getByText('1.5 MB used')).toBeVisible();
-    await expect(page.getByText('100 MB available to this browser profile')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Information' })).toBeVisible();
+    await expect(page.getByText('1.5 MB used of 100 MB')).toBeVisible();
     await expect(page.getByText('Back Up Local Notes')).toBeVisible();
     await expect(page.getByText('Notes are stored in this browser on this device.')).toBeVisible();
     await expect(page.getByText('Last Exported Never')).toBeVisible();
@@ -311,7 +310,7 @@ test.describe('main workflow regressions', () => {
     await page.reload();
 
     await page.getByRole('button', { name: 'Open settings' }).click();
-    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Information' })).toBeVisible();
     await expect(page.getByText('Storage estimates are not available in this browser.')).toBeVisible();
   });
 
@@ -320,14 +319,14 @@ test.describe('main workflow regressions', () => {
     await page.goto('http://localhost:3000/#settings');
 
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
-    await expect(page.getByText('1.5 MB used')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Information' })).toBeVisible();
+    await expect(page.getByText('1.5 MB used of 100 MB')).toBeVisible();
 
     await page.reload();
 
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Storage Usage' })).toBeVisible();
-    await expect(page.getByText('1.5 MB used')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Information' })).toBeVisible();
+    await expect(page.getByText('1.5 MB used of 100 MB')).toBeVisible();
   });
 
   test('renames categories and deletes tags from settings', async ({ page }) => {
@@ -346,11 +345,13 @@ test.describe('main workflow regressions', () => {
 
     await page.getByRole('button', { name: 'Open settings' }).click();
     await expect(page.getByText('1 notes, 5 categories, 2 tags')).toBeVisible();
-    await expect(page.locator('.management-list').first()).toContainText('People');
-    await expect(page.locator('.management-list').first()).toContainText('Places');
-    await expect(page.locator('.management-list').first()).toContainText('Things');
-    await expect(page.locator('.management-list').first()).toContainText('Projects');
-    await expect(page.locator('.management-list').first()).toContainText('Media');
+    const categoryList = page.locator('[aria-labelledby="category-management-title"] .management-list');
+    const tagList = page.locator('[aria-labelledby="tag-management-title"] .management-list');
+    await expect(categoryList).toContainText('People');
+    await expect(categoryList).toContainText('Places');
+    await expect(categoryList).toContainText('Things');
+    await expect(categoryList).toContainText('Projects');
+    await expect(categoryList).toContainText('Media');
 
     await page.getByRole('button', { name: 'Add category' }).click();
     await expect(page.getByLabel('Category name')).toBeVisible();
@@ -358,7 +359,7 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(page.getByText('Category added.')).toBeVisible();
     await expect(page.getByText('1 notes, 6 categories, 2 tags')).toBeVisible();
-    await expect(page.locator('.management-list').first()).toContainText('Ideas');
+    await expect(categoryList).toContainText('Ideas');
 
     await page.getByRole('button', { name: 'Add tag' }).click();
     await expect(page.getByLabel('Tag name')).toBeVisible();
@@ -366,15 +367,17 @@ test.describe('main workflow regressions', () => {
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(page.getByText('Tag added.')).toBeVisible();
     await expect(page.getByText('1 notes, 6 categories, 3 tags')).toBeVisible();
-    await expect(page.locator('.management-list').nth(1)).toContainText('review');
+    await expect(tagList).toContainText('review');
 
     const projectRow = page.locator('.management-row').filter({ hasText: 'Projects' });
+    await projectRow.click();
     page.once('dialog', (dialog) => dialog.accept('Renamed Projects'));
     await projectRow.getByRole('button', { name: 'Rename' }).click();
     await expect(page.getByText('Category renamed.')).toBeVisible();
     await expect(page.getByText('Renamed Projects')).toBeVisible();
 
     const managedTagRow = page.locator('.management-row').filter({ hasText: 'managed' });
+    await managedTagRow.click();
     page.once('dialog', (dialog) => dialog.accept());
     await managedTagRow.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText('Tag deleted.')).toBeVisible();

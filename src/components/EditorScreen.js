@@ -150,6 +150,12 @@ function parseChecklistItems(value) {
   });
 }
 
+function hasChecklistContent(value = '') {
+  return String(value)
+    .split('\n')
+    .some((line) => /^[-*]\s+\[[ xX]\]\s?/.test(line.trim()));
+}
+
 function serializeChecklistItems(items) {
   return items
     .map((item) => `- [${item.checked ? 'x' : ' '}] ${item.text}`)
@@ -172,14 +178,21 @@ function EditorScreen({ document, onBack, onSaved }) {
   const contentInput = useRef(null);
   const undoStack = useRef([]);
   const redoStack = useRef([]);
+  const preserveModeOnDocumentSync = useRef(false);
 
   useEffect(() => {
+    const nextContent = document?.content || document?.preview || '';
+
     setCurrentDocument(document || null);
     setTitle(document?.title || '');
-    setContent(document?.content || document?.preview || '');
+    setContent(nextContent);
     setCategory(getEditableCategory(document));
     setTagText(createTagText(document?.tags || []));
-    setEditorMode('edit');
+    if (preserveModeOnDocumentSync.current) {
+      preserveModeOnDocumentSync.current = false;
+    } else {
+      setEditorMode(hasChecklistContent(nextContent) ? 'checklist' : 'edit');
+    }
     setStatus('idle');
     setSaveStatusLabel('');
     setError('');
@@ -288,6 +301,7 @@ function EditorScreen({ document, onBack, onSaved }) {
       if (currentDocument?.id) {
         const savedDocument = await knowledgeDB.updateDocument(currentDocument.id, updates);
         setCurrentDocument(savedDocument);
+        preserveModeOnDocumentSync.current = true;
         onSaved(savedDocument);
         setStatus('saved');
         finishSavingStatus('saved', saveStartedAt);
@@ -295,6 +309,7 @@ function EditorScreen({ document, onBack, onSaved }) {
       } else {
         const savedDocument = await knowledgeDB.createDocument({ ...updates });
         setCurrentDocument(savedDocument);
+        preserveModeOnDocumentSync.current = true;
         onSaved(savedDocument);
         setStatus('saved');
         finishSavingStatus('saved', saveStartedAt);
